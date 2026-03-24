@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Keeta Dispatch - MVP Realista</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; height: 100vh; background-color: #f4f7f6; }
+        #mapa { width: 70%; height: 100%; }
+        #painel { width: 30%; padding: 25px; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto; }
+        h1 { font-size: 22px; color: #333; margin-bottom: 5px; }
+        
+        #relogio-container { background: #1a252f; color: #00ffcc; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-weight: bold; font-size: 32px; font-family: 'Courier New', monospace; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);}
+        .lbl-relogio { font-size: 11px; color: #888; display: block; font-family: 'Segoe UI', sans-serif; letter-spacing: 1px; margin-bottom: 5px;}
+
+        .kpi-container { background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .kpi-titulo { font-size: 12px; color: #777; text-transform: uppercase; letter-spacing: 1px; }
+        .kpi-valor { font-size: 22px; font-weight: bold; color: #2c3e50; margin-top: 5px; }
+        
+        button { background: #27ae60; color: white; border: none; padding: 15px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; margin-top: auto; }
+        button:hover { background: #219653; }
+        
+        #log { margin-top: 15px; font-size: 12px; color: #444; background: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 5px; height: 250px; overflow-y: auto; line-height: 1.5; }
+        .log-time { font-weight: bold; color: #7f8c8d; }
+        .log-eta { color: #e67e22; font-weight: bold; background: #fff3e0; padding: 2px 4px; border-radius: 3px;}
+        .log-sucesso { color: #27ae60; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+    <div id="mapa"></div>
+
+    <div id="painel">
+        <h1>Keeta Dispatch</h1>
+        <p style="color: #777; font-size: 14px; margin-top: 0; margin-bottom: 15px;">Operação Determinística - SP</p>
+
+        <div id="relogio-container">
+            <span class="lbl-relogio">HORÁRIO DA OPERAÇÃO</span>
+            <span id="relogio-display">12:00</span>
+        </div>
+
+        <div class="kpi-container">
+            <div class="kpi-titulo">SLA Médio de Entrega Real</div>
+            <div class="kpi-valor" id="kpi-sla">-- min</div>
+        </div>
+
+        <div class="kpi-container" style="border-left-color: #e74c3c;">
+            <div class="kpi-titulo">Custo por Entrega (CPO)</div>
+            <div class="kpi-valor" id="kpi-cpo" style="color: #e74c3c;">R$ 0,00</div>
+        </div>
+
+        <div class="kpi-container" style="border-left-color: #f39c12;">
+            <div class="kpi-titulo">Ocupação da Frota</div>
+            <div class="kpi-valor" id="kpi-ocupacao">0 / 4</div>
+        </div>
+
+        <div id="log">Monitor conectado ao Dispatcher...<br></div>
+
+        <button onclick="gerarNovoPedido()">Simular Novo Pedido</button>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // ==========================================
+        // 1. CONFIGURAÇÕES FÍSICAS DA SIMULAÇÃO
+        // ==========================================
+        const VELOCIDADE_MOTO_KMH = 30; // Velocidade base em SP
+        
+        // RELÓGIO: 1 segundo real = 1 minuto virtual
+        let dataVirtual = new Date();
+        dataVirtual.setHours(12, 0, 0, 0);
+
+        // ==========================================
+        // 2. SETUP DO MAPA E ATORES
+        // ==========================================
+        // Zoom afastado (13 em vez de 15) para ver viagens mais longas
+        const mapa = L.map('mapa').setView([-23.585, -46.678], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapa);
+
+        const iconeRest = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448657.png', iconSize: [30, 30] });
+        const iconeMotoLivre = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1156/1156645.png', iconSize: [25, 25] });
+        const iconeMotoOcupada = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/756/756940.png', iconSize: [30, 30] });
+        const iconeCliente = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/2555/2555572.png', iconSize: [20, 20] });
+
+        const restaurantes = [
+            { id: 'R1', lat: -23.586, lon: -46.679, nome: "Hamburgueria", tempoPreparoMin: 12 },
+            { id: 'R2', lat: -23.582, lon: -46.682, nome: "Pizzaria", tempoPreparoMin: 18 }
+        ];
+
+        restaurantes.forEach(r => L.marker([r.lat, r.lon], {icon: iconeRest}).addTo(mapa).bindPopup(`${r.nome} (Preparo: ${r.tempoPreparoMin}m)`));
+
+        // Frota mais espalhada por São Paulo (Jardins, Pinheiros, Moema, Berrini)
+        let frota = [
+            { id: 1, lat: -23.565, lon: -46.650, ocupado: false, marcador: L.marker([-23.565, -46.650], {icon: iconeMotoLivre}).addTo(mapa).bindPopup("Moto 1 - Jardins") },
+            { id: 2, lat: -23.600, lon: -46.690, ocupado: false, marcador: L.marker([-23.600, -46.690], {icon: iconeMotoLivre}).addTo(mapa).bindPopup("Moto 2 - Berrini") },
+            { id: 3, lat: -23.595, lon: -46.660, ocupado: false, marcador: L.marker([-23.595, -46.660], {icon: iconeMotoLivre}).addTo(mapa).bindPopup("Moto 3 - Moema") },
+            { id: 4, lat: -23.575, lon: -46.695, ocupado: false, marcador: L.marker([-23.575, -46.695], {icon: iconeMotoLivre}).addTo(mapa).bindPopup("Moto 4 - Pinheiros") }
+        ];
+
+        let filaDePedidos = [];
+        let contadorPedidos = 1000;
+        let metricas = { custoTotal: 0, pedidosEntregues: 0, tempoTotalSLA: 0 };
+
+        // ==========================================
+        // 3. MOTOR MATEMÁTICO (FÍSICA REAL)
+        // ==========================================
+        
+        function calcularDistanciaKM(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        // Formatação limpa (Apenas Hora e Minuto)
+        function formatarHora(data) {
+            return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute:'2-digit' });
+        }
+
+        function registrarLog(mensagem) {
+            const log = document.getElementById('log');
+            log.innerHTML += `<span class="log-time">[${formatarHora(dataVirtual)}]</span> ${mensagem}<br>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // ==========================================
+        // 4. O DISPATCHER DINÂMICO
+        // ==========================================
+        
+        function rodarDispatch() {
+            if (filaDePedidos.length === 0) return;
+
+            for (let i = filaDePedidos.length - 1; i >= 0; i--) {
+                let pedido = filaDePedidos[i];
+                let melhorMoto = null;
+                let menorTempoChegadaMin = Infinity;
+
+                for (let moto of frota) {
+                    if (!moto.ocupado) {
+                        let distKM = calcularDistanciaKM(moto.lat, moto.lon, pedido.restaurante.lat, pedido.restaurante.lon);
+                        
+                        // Fator de Trânsito Aleatório para o trajeto até o restaurante (Varia de 20 a 35 km/h)
+                        let velocidadeTransitoLocal = VELOCIDADE_MOTO_KMH * (0.6 + Math.random() * 0.6); 
+                        let tempoMinutos = distKM / (velocidadeTransitoLocal / 60);
+                        
+                        // Adiciona 1 a 3 minutos para o entregador achar o restaurante e estacionar
+                        tempoMinutos += 1 + Math.random() * 2; 
+
+                        if (tempoMinutos < menorTempoChegadaMin) {
+                            menorTempoChegadaMin = tempoMinutos;
+                            melhorMoto = moto;
+                        }
+                    }
+                }
+
+                if (melhorMoto) {
+                    alocarPedido(melhorMoto, pedido, menorTempoChegadaMin);
+                    filaDePedidos.splice(i, 1);
+                }
+            }
+            atualizarDashboard();
+        }
+
+        function alocarPedido(moto, pedido, tempoChegarRestauranteMin) {
+            moto.ocupado = true;
+            moto.marcador.setIcon(iconeMotoOcupada);
+
+            let distRestClienteKM = calcularDistanciaKM(pedido.restaurante.lat, pedido.restaurante.lon, pedido.latCliente, pedido.lonCliente);
+            
+            // Fator de Trânsito para a viagem principal
+            let velocidadeTransitoViagem = VELOCIDADE_MOTO_KMH * (0.6 + Math.random() * 0.6);
+            let tempoViagemPuraMin = distRestClienteKM / (velocidadeTransitoViagem / 60);
+            
+            // Variabilidade Real: Demora na portaria (entre 2 e 5 minutos)
+            let tempoPortariaMin = 2 + Math.floor(Math.random() * 4);
+            let tempoViagemTotalMin = tempoViagemPuraMin + tempoPortariaMin;
+            
+            let tempoEsperaNoRestauranteMin = Math.max(0, pedido.restaurante.tempoPreparoMin - tempoChegarRestauranteMin);
+            
+            let tempoTotalOperacaoMin = tempoChegarRestauranteMin + tempoEsperaNoRestauranteMin + tempoViagemTotalMin;
+            
+            let dataETA = new Date(dataVirtual.getTime() + tempoTotalOperacaoMin * 60000);
+            
+            registrarLog(`🔥 Moto ${moto.id} no Pedido #${pedido.id} (Dist: ${distRestClienteKM.toFixed(1)}km). <br>&nbsp;&nbsp;&nbsp;↳ <span class="log-eta">ETA: ${formatarHora(dataETA)} (${Math.round(tempoTotalOperacaoMin)} min)</span>`);
+            
+            metricas.tempoTotalSLA += tempoTotalOperacaoMin;
+
+            // MÁQUINA DE ESTADOS DETERMINÍSTICA
+            setTimeout(() => {
+                moto.marcador.setLatLng([pedido.restaurante.lat, pedido.restaurante.lon]);
+                moto.lat = pedido.restaurante.lat;
+                moto.lon = pedido.restaurante.lon;
+                
+                if(tempoEsperaNoRestauranteMin > 1) {
+                    registrarLog(`📍 Moto ${moto.id} no restaurante. Aguardando preparo (${Math.round(tempoEsperaNoRestauranteMin)} min)...`);
+                }
+                
+                setTimeout(() => {
+                    registrarLog(`🚀 Moto ${moto.id} a caminho do cliente!`);
+                    moto.marcador.setLatLng([pedido.latCliente, pedido.lonCliente]);
+                    moto.lat = pedido.latCliente;
+                    moto.lon = pedido.lonCliente;
+                    
+                    setTimeout(() => {
+                        finalizarEntrega(moto, pedido, distRestClienteKM);
+                    }, tempoViagemTotalMin * 1000); 
+
+                }, tempoEsperaNoRestauranteMin * 1000); 
+
+            }, tempoChegarRestauranteMin * 1000); 
+        }
+
+        function finalizarEntrega(moto, pedido, distanciaPercorridaKM) {
+            moto.ocupado = false;
+            moto.marcador.setIcon(iconeMotoLivre);
+            mapa.removeLayer(pedido.marcadorCliente);
+
+            let custoDessaEntrega = 5.00 + (distanciaPercorridaKM * 1.50); 
+            metricas.custoTotal += custoDessaEntrega;
+            metricas.pedidosEntregues++;
+
+            registrarLog(`<span class="log-sucesso">✅ Pedido #${pedido.id} Entregue na portaria! Moto ${moto.id} livre.</span>`);
+            atualizarDashboard();
+        }
+
+        // ==========================================
+        // 5. LOOP DO RELÓGIO E EVENTOS
+        // ==========================================
+        
+        function gerarNovoPedido() {
+            contadorPedidos++;
+            const rest = restaurantes[Math.floor(Math.random() * restaurantes.length)];
+            
+            // Área muito maior para gerar clientes (Pode ser do outro lado da cidade)
+            const latCliente = rest.lat + (Math.random() - 0.5) * 0.08; 
+            const lonCliente = rest.lon + (Math.random() - 0.5) * 0.08;
+
+            const novoPedido = {
+                id: contadorPedidos,
+                restaurante: rest,
+                latCliente: latCliente,
+                lonCliente: lonCliente,
+                marcadorCliente: L.marker([latCliente, lonCliente], {icon: iconeCliente}).addTo(mapa)
+            };
+
+            filaDePedidos.push(novoPedido);
+            registrarLog(`🍔 Pedido #${contadorPedidos} entrou no servidor (${rest.nome}).`);
+            atualizarDashboard();
+        }
+
+        function atualizarDashboard() {
+            let ocupadas = frota.filter(m => m.ocupado).length;
+            document.getElementById('kpi-ocupacao').innerText = `${ocupadas} / ${frota.length}`;
+            
+            if (metricas.pedidosEntregues > 0) {
+                let cpo = metricas.custoTotal / metricas.pedidosEntregues;
+                document.getElementById('kpi-cpo').innerText = `R$ ${cpo.toFixed(2).replace('.', ',')}`;
+                
+                let sla = Math.round(metricas.tempoTotalSLA / metricas.pedidosEntregues);
+                document.getElementById('kpi-sla').innerText = `${sla} min`;
+            }
+        }
+
+        // Relógio Central: 1 segundo real = 1 minuto de simulação
+        setInterval(() => {
+            dataVirtual.setMinutes(dataVirtual.getMinutes() + 1);
+            document.getElementById('relogio-display').innerText = formatarHora(dataVirtual);
+            rodarDispatch(); 
+        }, 1000); 
+
+    </script>
+</body>
+</html>
