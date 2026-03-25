@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Keeta Dispatch Pro - Resiliência</title>
+    <title>Algoritmo Keeta - Rota Imune</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; height: 100vh; background-color: #f0f2f5; }
@@ -58,19 +58,19 @@
     <div id="mapa"></div>
 
     <div id="painel">
-        <h1>Keeta Dispatch Pro</h1>
-        <p class="sub-header">Otimização, Capacidade e Resiliência</p>
+        <h1>Algoritmo Keeta - Rota Imune</h1>
+        <p class="sub-header">Otimização Combinatorial - Holding Time e Batching Dinâmico</p>
 
         <div id="relogio-container">
-            <span class="lbl-relogio">HORÁRIO DO SISTEMA</span>
+            <span class="lbl-relogio">HORÁRIO DO SISTEMA(1s = 1m)</span>
             <span id="relogio-display">12:00</span>
         </div>
         
-        <div id="alerta-surge">🔥 SURGE PRICING: REDISTRIBUINDO FROTA</div>
+        <div id="alerta-surge">🔥 ALTA DEMANDA: REDISTRIBUINDO FROTA</div>
 
         <div class="kpi-grid">
             <div class="kpi-card border-orange">
-                <div class="kpi-titulo">SLA Médio (Tempo)</div>
+                <div class="kpi-titulo">Tempo Médio</div>
                 <div class="kpi-valor" id="kpi-sla">-- min</div>
             </div>
             <div class="kpi-card">
@@ -78,7 +78,7 @@
                 <div class="kpi-valor" id="kpi-entregas">0</div>
             </div>
             <div class="kpi-card border-purple">
-                <div class="kpi-titulo">Ganho Médio/Motoboy</div>
+                <div class="kpi-titulo">Ganho Médio/Motoboy/Entrega</div>
                 <div class="kpi-valor" id="kpi-ganho-entregador">R$ 0,00</div>
             </div>
             <div class="kpi-card border-green">
@@ -87,11 +87,11 @@
             </div>
         </div>
 
-        <div id="log">🟢 Sistema Online: Prisão de Fila e Bugs corrigidos.<br></div>
+        <div id="log">🟢 Sistema Online: Inicie a simulação.<br></div>
 
         <div class="btn-group">
-            <button class="btn-simular" onclick="gerarNovoPedido()">🍔 Simular Pedido</button>
-            <button class="btn-caos" onclick="simularImprevisto()">⚠️ Acidente (Caos)</button>
+            <button class="btn-simular" onclick="gerarNovoPedido()">Simular Pedido</button>
+            <button class="btn-caos" onclick="simularImprevisto()">Acidente (Caos)</button>
             <button class="btn-exportar btn-full" onclick="baixarCSV()">📊 Exportar Dados (CSV)</button>
         </div>
     </div>
@@ -334,7 +334,7 @@
             let idsRecuperados = azarado.loteAtual.map(p => `#${p.id}`).join(', ');
             azarado.loteAtual = [];
 
-            registrarLog(`<span class="log-caos">💥 ALERTA CRÍTICO: ${azarado.tipo} ${azarado.id} sofreu avaria! Pedidos [${idsRecuperados}] voltaram para a Fila de Emergência.</span>`);
+            registrarLog(`<span class="log-caos">💥 ALERTA CRÍTICO: ${azarado.tipo} ${azarado.id} sofreu um acidente! Pedidos [${idsRecuperados}] voltaram para a Fila de Emergência.</span>`);
             
             rodarDispatch();
             
