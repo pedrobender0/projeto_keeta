@@ -171,7 +171,6 @@
         let filaDePedidos = [];
         let filaRecuperacao = []; 
         let contadorPedidos = 1000;
-        
         let pedidosAtivosUI = []; 
 
         let metricas = { 
@@ -211,7 +210,8 @@
                 else if (p.status === 'Indo ao Restaurante') corBorda = '#3498db'; 
                 else if (p.status === 'Aguardando Preparo') corBorda = '#9b59b6'; 
                 else if (p.status === 'Em Rota para Entrega') corBorda = '#2ecc71'; 
-                else if (p.status === 'Logística Rest. (MKT)') corBorda = '#34495e'; 
+                else if (p.status === 'Logística Rest. (Preparo)') corBorda = '#7f8c8d'; 
+                else if (p.status === 'Logística Rest. (Em Rota)') corBorda = '#34495e'; 
 
                 let entregadorHtml = p.entregadorDesignado ? `<span class="badge-entregador">${p.entregadorDesignado}</span>` : '';
 
@@ -322,6 +322,8 @@
             let tagTipo = isBike ? '<span class="tag-bike">BIKE</span>' : '<span class="tag-moto">MOTO</span>';
             let nomeEntregador = entregador.tipo + ' ' + entregador.id;
 
+            let distAteRestauranteKM = calcularDistanciaKM(entregador.lat, entregador.lon, restaurante.lat, restaurante.lon);
+
             let diferencaTempo = restaurante.tempoPreparoMin - tempoViagemAteRestauranteMin;
             let tempoPostergadoMin = diferencaTempo > 3 ? diferencaTempo - 2 : 0;
             let tempoEsperaNoRestauranteMin = diferencaTempo < 0 ? 0 : 2; 
@@ -395,7 +397,18 @@
                                 entregador.loteAtual = entregador.loteAtual.filter(p => p.id !== clienteDestino.id);
                                 
                                 let isPrimeiraEntrega = (clienteAtualIndex === 0);
-                                processarFinanceiroFullService(entregador, clienteDestino, distTrecho, isSurgeAtivo, isPrimeiraEntrega, tempoSLAEstimadoAcumulado);
+                                
+                                let detalhesExtrasPlanilha = {
+                                    distAteRestaurante: isPrimeiraEntrega ? distAteRestauranteKM : 0, 
+                                    distCliente: distTrecho,
+                                    tempoPostergado: tempoPostergadoMin,
+                                    tempoEspera: tempoEsperaNoRestauranteMin,
+                                    tempoViagem: tempoViagem,
+                                    restauranteLat: restaurante.lat,
+                                    restauranteLon: restaurante.lon
+                                };
+
+                                processarFinanceiroFullService(entregador, clienteDestino, distTrecho, isSurgeAtivo, isPrimeiraEntrega, tempoSLAEstimadoAcumulado, detalhesExtrasPlanilha);
 
                                 clienteAtualIndex++;
                                 latAtual = clienteDestino.latCliente;
@@ -445,17 +458,23 @@
             }, 20000);
         }
 
-        function processarFinanceiroFullService(entregador, pedido, distPercorridaKM, isSurgeAtivo, isPrimeiraEntrega, slaFinal) {
+        function processarFinanceiroFullService(entregador, pedido, distPercorridaKM, isSurgeAtivo, isPrimeiraEntrega, slaFinal, detalhes) {
             
             pedidosAtivosUI = pedidosAtivosUI.filter(p => p.id !== pedido.id);
 
             let receitaApp = (pedido.gmv * 0.25) + (pedido.gmv * 0.032);
             let ganhoRestaurante = pedido.gmv - receitaApp;
 
-            let ganhoNestaPerna = isPrimeiraEntrega ? Math.max(7.50, 7.00 + (distPercorridaKM * 1.50)) : 3.00;
+            let ganhoBasePerna = isPrimeiraEntrega ? Math.max(7.50, 7.00 + (distPercorridaKM * 1.50)) : 3.00;
             let bonusSurge = isSurgeAtivo ? 2.50 : 0;
-            let ganhoLogisticoReal = ganhoNestaPerna + bonusSurge;
+            
+            let taxaRetorno = 0;
+            let distDeVoltaProPolo = calcularDistanciaKM(pedido.latCliente, pedido.lonCliente, detalhes.restauranteLat, detalhes.restauranteLon);
+            if (distDeVoltaProPolo > 3.0 && entregador.tipo !== 'BIKE') {
+                taxaRetorno = 3.00; 
+            }
 
+            let ganhoLogisticoReal = ganhoBasePerna + bonusSurge + taxaRetorno;
             let lucroLiquidoApp = receitaApp - ganhoLogisticoReal;
 
             metricas.pedidosGerais++;
@@ -465,17 +484,37 @@
             metricas.lucroTotalApp += lucroLiquidoApp;
             metricas.ganhoTotalRestaurantesFull += ganhoRestaurante;
 
+            let distTotalFisica = detalhes.distAteRestaurante + detalhes.distCliente;
+
             historicoDeDados.push({
-                id_pedido: pedido.id, tipo_veiculo: entregador.tipo, tipo_servico: "FULL SERVICE",
-                gmv: pedido.gmv.toFixed(2), receita_app: receitaApp.toFixed(2),
-                custo_logistico: ganhoLogisticoReal.toFixed(2), lucro_liquido: lucroLiquidoApp.toFixed(2)
+                id_pedido: pedido.id, 
+                tipo_veiculo: entregador.tipo, 
+                tipo_servico: "FULL SERVICE",
+                gmv: pedido.gmv.toFixed(2), 
+                receita_app: receitaApp.toFixed(2),
+                custo_base: ganhoBasePerna.toFixed(2), 
+                bonus_surge: bonusSurge.toFixed(2),
+                taxa_retorno: taxaRetorno.toFixed(2),
+                custo_total_logistico: ganhoLogisticoReal.toFixed(2), 
+                lucro_liquido: lucroLiquidoApp.toFixed(2),
+                dist_ate_rest: detalhes.distAteRestaurante.toFixed(2),
+                dist_ate_cliente: detalhes.distCliente.toFixed(2),
+                dist_total: distTotalFisica.toFixed(2),
+                tempo_postergado: detalhes.tempoPostergado.toFixed(1),
+                tempo_espera: detalhes.tempoEspera.toFixed(1),
+                tempo_viagem: detalhes.tempoViagem.toFixed(1),
+                sla_final: slaFinal.toFixed(1)
             });
 
-            registrarLog(`<span class="log-sucesso">✅ Pedido #${pedido.id} entregue.</span> (Feito em ${Math.round(slaFinal)}m | Lucro: R$ ${lucroLiquidoApp.toFixed(2).replace('.', ',')})`);
+            let msgRetorno = taxaRetorno > 0 ? ` (+ R$ ${taxaRetorno.toFixed(2).replace('.',',')} Retorno)` : '';
+            registrarLog(`<span class="log-sucesso">✅ Pedido #${pedido.id} entregue.</span> (Feito em ${Math.round(slaFinal)}m | Lucro App: R$ ${lucroLiquidoApp.toFixed(2).replace('.', ',')})${msgRetorno}`);
             atualizarDashboard();
         }
 
-        function processarFinanceiroMarketplace(pedido) {
+        // ==========================================
+        // CORREÇÃO: FANTASMA MARKETPLACE (TEMPO REALISTA)
+        // ==========================================
+        function processarFinanceiroMarketplace(pedido, slaFinal, tempoPreparo, tempoViagem) {
             pedidosAtivosUI = pedidosAtivosUI.filter(p => p.id !== pedido.id);
 
             let receitaApp = (pedido.gmv * 0.12) + (pedido.gmv * 0.032);
@@ -488,27 +527,48 @@
             metricas.ganhoTotalRestaurantesMkt += ganhoRestaurante;
 
             historicoDeDados.push({
-                id_pedido: pedido.id, tipo_veiculo: "FROTA RESTAURANTE", tipo_servico: "MARKETPLACE",
-                gmv: pedido.gmv.toFixed(2), receita_app: receitaApp.toFixed(2),
-                custo_logistico: "0.00", lucro_liquido: lucroLiquidoApp.toFixed(2)
+                id_pedido: pedido.id, 
+                tipo_veiculo: "FROTA RESTAURANTE", 
+                tipo_servico: "MARKETPLACE",
+                gmv: pedido.gmv.toFixed(2), 
+                receita_app: receitaApp.toFixed(2),
+                custo_base: "0.00", 
+                bonus_surge: "0.00",
+                taxa_retorno: "0.00",
+                custo_total_logistico: "0.00", 
+                lucro_liquido: lucroLiquidoApp.toFixed(2),
+                dist_ate_rest: "0.00",
+                dist_ate_cliente: "0.00",
+                dist_total: "0.00",
+                tempo_postergado: "0.0",
+                tempo_espera: tempoPreparo.toFixed(1),
+                tempo_viagem: tempoViagem.toFixed(1),
+                sla_final: slaFinal.toFixed(1)
             });
 
             mapa.removeLayer(pedido.marcadorCliente);
             let tagMkt = '<span class="tag-tipo bg-mkt">MKTPLACE</span>';
-            registrarLog(`${tagMkt} Pedido #${pedido.id} finalizado (Frota Própria).`);
+            registrarLog(`${tagMkt} Pedido #${pedido.id} finalizado. (Feito em ${slaFinal}m | Lucro App: R$ ${lucroLiquidoApp.toFixed(2).replace('.', ',')})`);
             atualizarDashboard();
         }
 
         function baixarCSV() {
             if (historicoDeDados.length === 0) return alert("Simule pedidos antes.");
-            let csvContent = "data:text/csv;charset=utf-8,ID Pedido;Modalidade;Veiculo;GMV (R$);Receita App (R$);Custo Logistico (R$);Lucro Liquido App (R$)\n";
+            let csvContent = "data:text/csv;charset=utf-8,ID Pedido;Modalidade;Veiculo;GMV (R$);Receita App (R$);Custo Base Entregador (R$);Bonus Surge (R$);Taxa Retorno (R$);Custo Logistico Total (R$);Lucro Liquido App (R$);Dist. Ate Restaurante (KM);Dist. Ate Cliente (KM);Dist. Total (KM);Tempo JIT Postergado (Min);Tempo Espera Rest. (Min);Tempo Viagem Cliente (Min);SLA Total (Min)\n";
+            
             historicoDeDados.forEach(r => {
-                let row = [ r.id_pedido, r.tipo_servico, r.tipo_veiculo, r.gmv.replace('.', ','), r.receita_app.replace('.', ','), r.custo_logistico.replace('.', ','), r.lucro_liquido.replace('.', ',') ];
+                let row = [ 
+                    r.id_pedido, r.tipo_servico, r.tipo_veiculo, 
+                    r.gmv.replace('.', ','), r.receita_app.replace('.', ','), 
+                    r.custo_base.replace('.', ','), r.bonus_surge.replace('.', ','), r.taxa_retorno.replace('.', ','), r.custo_total_logistico.replace('.', ','), r.lucro_liquido.replace('.', ','),
+                    r.dist_ate_rest.replace('.', ','), r.dist_ate_cliente.replace('.', ','), r.dist_total.replace('.', ','),
+                    r.tempo_postergado.replace('.', ','), r.tempo_espera.replace('.', ','), r.tempo_viagem.replace('.', ','), r.sla_final.replace('.', ',')
+                ];
                 csvContent += row.join(";") + "\n";
             });
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
-            link.setAttribute("download", "keeta_DRE_logistico.csv");
+            link.setAttribute("download", "keeta_DRE_detalhado.csv");
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
@@ -532,12 +592,34 @@
                 marcadorCliente: L.marker([latCliente, lonCliente], {icon: iconeCliente}).addTo(mapa)
             };
 
-            pedidosAtivosUI.push(novoPedido);
-
+            // 20% Marketplace, 80% Full Service
             if (Math.random() < 0.20) {
-                novoPedido.status = 'Logística Rest. (MKT)';
-                setTimeout(() => processarFinanceiroMarketplace(novoPedido), 3000); 
+                novoPedido.status = 'Logística Rest. (Preparo)';
+                novoPedido.entregadorDesignado = 'Frota Própria';
+                pedidosAtivosUI.push(novoPedido);
+
+                let tempoPreparoMkt = 15 + Math.floor(Math.random() * 15); // 15 a 30 min
+                let tempoViagemMkt = 10 + Math.floor(Math.random() * 15); // 10 a 25 min
+                let tempoTotalMkt = tempoPreparoMkt + tempoViagemMkt;
+
+                let tagMkt = '<span class="tag-tipo bg-mkt">MKTPLACE</span>';
+                registrarLog(`${tagMkt} Pedido #${novoPedido.id} aceito pelo restaurante. (Previsão: ~${tempoTotalMkt}m)`);
+                
+                // Fase 1: Aguardando Preparo (Restaurante)
+                setTimeout(() => {
+                    let pUI = pedidosAtivosUI.find(p => p.id === novoPedido.id);
+                    if (pUI) pUI.status = 'Logística Rest. (Em Rota)';
+                    registrarLog(`<span class="log-mkt">📦 MKTPLACE: Pedido #${novoPedido.id} saiu para entrega. Leva ~${tempoViagemMkt}m.</span>`);
+                    
+                    // Fase 2: Viagem até o cliente
+                    setTimeout(() => {
+                        processarFinanceiroMarketplace(novoPedido, tempoTotalMkt, tempoPreparoMkt, tempoViagemMkt);
+                    }, tempoViagemMkt * 1000);
+                    
+                }, tempoPreparoMkt * 1000); 
+                
             } else {
+                pedidosAtivosUI.push(novoPedido);
                 filaDePedidos.push(novoPedido);
                 rodarDispatch();
             }
