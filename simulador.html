@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Keeta Dispatch - Full Stack Logistics</title>
+    <title>Keeta Dispatch Pro - Resiliência</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; height: 100vh; background-color: #f0f2f5; }
@@ -48,21 +48,9 @@
         .tag-bike { background: #2ecc71; color: white; padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: bold; text-transform: uppercase;}
         .tag-moto { background: #34495e; color: white; padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: bold; text-transform: uppercase;}
 
-        /* CSS DOS NOVOS ÍCONES DO MAPA */
-        .marker-custom {
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 50%; border: 2px solid #fff;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
-            font-size: 20px;
-        }
-        .marker-pulse {
-            animation: pulse-red 1s infinite;
-        }
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.8); }
-            70% { box-shadow: 0 0 0 12px rgba(231, 76, 60, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
-        }
+        .marker-custom { display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 3px 6px rgba(0,0,0,0.4); font-size: 20px; }
+        .marker-pulse { animation: pulse-red 1s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.8); } 70% { box-shadow: 0 0 0 12px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
     </style>
 </head>
 <body>
@@ -90,7 +78,7 @@
                 <div class="kpi-valor" id="kpi-entregas">0</div>
             </div>
             <div class="kpi-card border-purple">
-                <div class="kpi-titulo">Ganho Médio/Entregador</div>
+                <div class="kpi-titulo">Ganho Médio/Motoboy</div>
                 <div class="kpi-valor" id="kpi-ganho-entregador">R$ 0,00</div>
             </div>
             <div class="kpi-card border-green">
@@ -99,7 +87,7 @@
             </div>
         </div>
 
-        <div id="log">🟢 Sistema Online: Capacidade, Rebalanceamento e Caos ativados.<br></div>
+        <div id="log">🟢 Sistema Online: Prisão de Fila e Bugs corrigidos.<br></div>
 
         <div class="btn-group">
             <button class="btn-simular" onclick="gerarNovoPedido()">🍔 Simular Pedido</button>
@@ -119,28 +107,17 @@
         const mapa = L.map('mapa').setView([-23.585, -46.678], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapa);
 
-        // ==========================================
-        // NOVOS ÍCONES CUSTOMIZADOS (Mais claros e chamativos)
-        // ==========================================
         function criarIcone(emoji, corBg, extraClass = '') {
-            return L.divIcon({
-                html: `<div class="marker-custom ${extraClass}" style="background-color: ${corBg}; width: 35px; height: 35px;">${emoji}</div>`,
-                className: '',
-                iconSize: [35, 35],
-                iconAnchor: [17, 17],
-                popupAnchor: [0, -17]
-            });
+            return L.divIcon({ html: `<div class="marker-custom ${extraClass}" style="background-color: ${corBg}; width: 35px; height: 35px;">${emoji}</div>`, className: '', iconSize: [35, 35], iconAnchor: [17, 17], popupAnchor: [0, -17] });
         }
 
-        const iconeRest = criarIcone('🏪', '#2c3e50'); // Azul Escuro
-        const iconeCliente = criarIcone('📍', '#8e44ad'); // Roxo
-        
-        // Cores de Status: Verde = Livre, Laranja = Ocupado, Vermelho = Quebrado
+        const iconeRest = criarIcone('🏪', '#2c3e50'); 
+        const iconeCliente = criarIcone('📍', '#8e44ad'); 
         const iconeMotoLivre = criarIcone('🛵', '#27ae60'); 
         const iconeMotoOcupada = criarIcone('🛵', '#f39c12'); 
         const iconeBikeLivre = criarIcone('🚲', '#27ae60'); 
         const iconeBikeOcupada = criarIcone('🚲', '#f39c12'); 
-        const iconeQuebrado = criarIcone('⚠️', '#e74c3c', 'marker-pulse'); // Vermelho Piscando
+        const iconeQuebrado = criarIcone('⚠️', '#e74c3c', 'marker-pulse'); 
 
         const restaurantes = [
             { id: 'R1', lat: -23.586, lon: -46.679, nome: "Hamburgueria (Polo Sul)", tempoPreparoMin: 12 },
@@ -163,45 +140,28 @@
         let historicoDeDados = [];
 
         function calcularDistanciaKM(lat1, lon1, lat2, lon2) {
-            const R = 6371; 
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
-
         function formatarHora(data) { return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute:'2-digit' }); }
-        
         function registrarLog(mensagem) {
-            const log = document.getElementById('log');
-            log.innerHTML += `<span class="log-time">[${formatarHora(dataVirtual)}]</span> ${mensagem}<br>`;
-            log.scrollTop = log.scrollHeight;
+            const log = document.getElementById('log'); log.innerHTML += `<span class="log-time">[${formatarHora(dataVirtual)}]</span> ${mensagem}<br>`; log.scrollTop = log.scrollHeight;
         }
 
-        // ==========================================
-        // O MOTOR DE REDISTRIBUIÇÃO PREDITIVA
-        // ==========================================
         function rebalancearFrota(isSurgeAtivo) {
             if (!isSurgeAtivo) return;
-            let poloLat = -23.584; 
-            let poloLon = -46.680;
-            
+            let poloLat = -23.584, poloLon = -46.680;
             frota.forEach(ent => {
                 if (!ent.ocupado && !ent.quebrado) {
                     let dist = calcularDistanciaKM(ent.lat, ent.lon, poloLat, poloLon);
                     if (dist > 1.0) { 
-                        ent.lat += (poloLat - ent.lat) * 0.1;
-                        ent.lon += (poloLon - ent.lon) * 0.1;
-                        ent.marcador.setLatLng([ent.lat, ent.lon]);
+                        ent.lat += (poloLat - ent.lat) * 0.1; ent.lon += (poloLon - ent.lon) * 0.1; ent.marcador.setLatLng([ent.lat, ent.lon]);
                     }
                 }
             });
-            registrarLog(`<span class="log-rebalance">🔄 Redistribuição: Frota livre direcionada ao foco de calor.</span>`);
         }
 
-        // ==========================================
-        // O MOTOR DE DISPATCH
-        // ==========================================
         function rodarDispatch() {
             let pedidosProcessar = [...filaRecuperacao, ...filaDePedidos];
             if (pedidosProcessar.length === 0) return;
@@ -210,8 +170,11 @@
             document.getElementById('alerta-surge').style.display = isSurgeAtivo ? 'block' : 'none';
             rebalancearFrota(isSurgeAtivo);
 
+            // CORREÇÃO: Limita o agrupamento baseado em quem está livre
+            let motosLivres = frota.filter(e => e.tipo === 'MOTO' && !e.ocupado && !e.quebrado).length;
+            let maxVolumeFormacao = motosLivres > 0 ? 3 : 2; // Se não tem moto, agrupa até 2 para a bike poder puxar!
+
             let lotes = [];
-            
             while(pedidosProcessar.length > 0) {
                 let pedidoBase = pedidosProcessar.shift();
                 let loteAtual = [pedidoBase];
@@ -219,7 +182,7 @@
 
                 for(let i = 0; i < pedidosProcessar.length; i++) {
                     let candidato = pedidosProcessar[i];
-                    if (candidato.restaurante.id === pedidoBase.restaurante.id && (volumeLote + candidato.volume <= 3)) {
+                    if (candidato.restaurante.id === pedidoBase.restaurante.id && (volumeLote + candidato.volume <= maxVolumeFormacao)) {
                         let distEntreClientes = calcularDistanciaKM(pedidoBase.latCliente, pedidoBase.lonCliente, candidato.latCliente, candidato.lonCliente);
                         if (distEntreClientes <= 2.5) {
                             loteAtual.push(candidato);
@@ -232,8 +195,7 @@
                 lotes.push({ pedidos: loteAtual, volumeTotal: volumeLote });
             }
 
-            filaDePedidos = []; 
-            filaRecuperacao = [];
+            filaDePedidos = []; filaRecuperacao = [];
 
             for (let loteObj of lotes) {
                 let entregadorDesignado = null;
@@ -278,11 +240,10 @@
             let diferencaTempo = restaurante.tempoPreparoMin - tempoViagemAteRestauranteMin;
             let tempoPostergadoMin = diferencaTempo > 3 ? diferencaTempo - 2 : 0;
             let tempoEsperaNoRestauranteMin = diferencaTempo < 0 ? 0 : 2; 
-
             let tempoSLAEstimado = tempoPostergadoMin + tempoViagemAteRestauranteMin + tempoEsperaNoRestauranteMin;
 
             if (tempoPostergadoMin > 0) {
-                registrarLog(`<span class="log-jit">🧠 JIT: ${tagTipo} ${entregador.id} reservado(a). Segurando chamada por ${Math.round(tempoPostergadoMin)}m. (Vol: ${lote.reduce((acc, p) => acc + p.volume, 0)}/${entregador.capMax})</span>`);
+                registrarLog(`<span class="log-jit">🧠 JIT: ${tagTipo} ${entregador.id} reservado. Despacho após ${Math.round(tempoPostergadoMin)}m. (Carga: ${lote.length} unids)</span>`);
             } else {
                 entregador.marcador.setIcon(isBike ? iconeBikeOcupada : iconeMotoOcupada);
             }
@@ -300,44 +261,55 @@
                     setTimeout(() => {
                         if(entregador.quebrado) return;
                         
-                        let c1 = lote[0];
-                        let distC1 = calcularDistanciaKM(restaurante.lat, restaurante.lon, c1.latCliente, c1.lonCliente);
-                        let tempoViagemC1 = distC1 / ((isBike ? VEL_BIKE_KMH : VEL_MOTO_KMH) * 0.6 / 60) + 3; 
-                        tempoSLAEstimado += tempoViagemC1;
-                        
-                        setTimeout(() => {
-                            if(entregador.quebrado) return;
-                            entregador.marcador.setLatLng([c1.latCliente, c1.lonCliente]);
-                            entregador.lat = c1.latCliente;
-                            entregador.lon = c1.lonCliente;
-                            
-                            mapa.removeLayer(c1.marcadorCliente);
-                            metricas.tempoTotalSLA += tempoSLAEstimado;
-                            
-                            entregador.loteAtual = entregador.loteAtual.filter(p => p.id !== c1.id);
-                            processarFinanceiro(entregador, c1, distC1, restaurante, isSurgeAtivo, lote.length === 1);
+                        // CORREÇÃO: Máquina de Estados Recursiva (Entrega N pedidos sem esquecer nenhum)
+                        let clienteAtualIndex = 0;
+                        let latAtual = restaurante.lat;
+                        let lonAtual = restaurante.lon;
+                        let distAcumulada = 0;
 
-                            if (lote.length > 1) {
-                                let c2 = lote[1];
-                                let distC2 = calcularDistanciaKM(c1.latCliente, c1.lonCliente, c2.latCliente, c2.lonCliente);
-                                let tempoViagemC2 = distC2 / ((isBike ? VEL_BIKE_KMH : VEL_MOTO_KMH) * 0.6 / 60) + 3;
-                                tempoSLAEstimado += tempoViagemC2;
-                                
-                                setTimeout(() => {
-                                    if(entregador.quebrado) return;
-                                    entregador.marcador.setLatLng([c2.latCliente, c2.lonCliente]);
-                                    entregador.lat = c2.latCliente;
-                                    entregador.lon = c2.lonCliente;
-                                    
-                                    mapa.removeLayer(c2.marcadorCliente);
-                                    metricas.tempoTotalSLA += tempoSLAEstimado;
-                                    entregador.loteAtual = [];
-                                    processarFinanceiro(entregador, c2, distC1 + distC2, restaurante, isSurgeAtivo, true); 
-                                    
-                                }, tempoViagemC2 * 1000); 
+                        function irParaProximoCliente() {
+                            if (entregador.quebrado) return;
+                            if (clienteAtualIndex >= lote.length) {
+                                entregador.ocupado = false;
+                                entregador.marcador.setIcon(isBike ? iconeBikeLivre : iconeMotoLivre);
+                                return;
                             }
 
-                        }, tempoViagemC1 * 1000); 
+                            let clienteDestino = lote[clienteAtualIndex];
+                            let distTrecho = calcularDistanciaKM(latAtual, lonAtual, clienteDestino.latCliente, clienteDestino.lonCliente);
+                            distAcumulada += distTrecho;
+
+                            let fatorTransito = isBike ? 0.9 : 0.6; 
+                            let velocidadeReal = (isBike ? VEL_BIKE_KMH : VEL_MOTO_KMH) * fatorTransito;
+                            let tempoViagem = distTrecho / (velocidadeReal / 60) + 3; 
+                            
+                            tempoSLAEstimado += tempoViagem;
+
+                            setTimeout(() => {
+                                if (entregador.quebrado) return;
+                                
+                                entregador.marcador.setLatLng([clienteDestino.latCliente, clienteDestino.lonCliente]);
+                                entregador.lat = clienteDestino.latCliente;
+                                entregador.lon = clienteDestino.lonCliente;
+                                
+                                mapa.removeLayer(clienteDestino.marcadorCliente);
+                                metricas.tempoTotalSLA += tempoSLAEstimado;
+                                
+                                entregador.loteAtual = entregador.loteAtual.filter(p => p.id !== clienteDestino.id);
+                                
+                                let isUltimo = (clienteAtualIndex === lote.length - 1);
+                                processarFinanceiro(entregador, clienteDestino, distAcumulada, restaurante, isSurgeAtivo, isUltimo);
+
+                                clienteAtualIndex++;
+                                latAtual = clienteDestino.latCliente;
+                                lonAtual = clienteDestino.lonCliente;
+                                
+                                irParaProximoCliente(); // Loop Recursivo
+                                
+                            }, tempoViagem * 1000); 
+                        }
+
+                        irParaProximoCliente(); // Inicia as entregas
 
                     }, tempoEsperaNoRestauranteMin * 1000); 
 
@@ -346,13 +318,10 @@
             }, tempoPostergadoMin * 1000); 
         }
 
-        // ==========================================
-        // RECUPERAÇÃO DE FALHAS (BOTÃO CAOS)
-        // ==========================================
         function simularImprevisto() {
             let ocupados = frota.filter(e => e.ocupado && !e.quebrado && e.loteAtual && e.loteAtual.length > 0);
             if (ocupados.length === 0) {
-                alert("Nenhum entregador em rota com pedidos para simular o acidente. Gere pedidos primeiro.");
+                alert("Para simular um acidente, o entregador precisa estar em movimento com pedidos.");
                 return;
             }
 
@@ -365,14 +334,14 @@
             let idsRecuperados = azarado.loteAtual.map(p => `#${p.id}`).join(', ');
             azarado.loteAtual = [];
 
-            registrarLog(`<span class="log-caos">💥 ALERTA CRÍTICO: ${azarado.tipo} ${azarado.id} inoperante! Pedidos ${idsRecuperados} em reatribuição de emergência.</span>`);
+            registrarLog(`<span class="log-caos">💥 ALERTA CRÍTICO: ${azarado.tipo} ${azarado.id} sofreu avaria! Pedidos [${idsRecuperados}] voltaram para a Fila de Emergência.</span>`);
             
             rodarDispatch();
             
             setTimeout(() => {
                 azarado.quebrado = false;
                 azarado.marcador.setIcon(azarado.tipo === 'BIKE' ? iconeBikeLivre : iconeMotoLivre);
-                registrarLog(`🔧 Conserto finalizado. ${azarado.tipo} ${azarado.id} voltou à base.`);
+                registrarLog(`🔧 ${azarado.tipo} ${azarado.id} consertado e voltou à base.`);
             }, 20000);
         }
 
@@ -397,11 +366,6 @@
             metricas.repasseTotalEntregadores += ganhoTotalEntregador;
             metricas.lucroTotalApp += lucroLiquidoApp;
             metricas.pedidosEntregues++;
-
-            if (isFimDoTurno) {
-                entregador.ocupado = false;
-                entregador.marcador.setIcon(isBike ? iconeBikeLivre : iconeMotoLivre);
-            }
 
             historicoDeDados.push({
                 id_pedido: pedido.id,
