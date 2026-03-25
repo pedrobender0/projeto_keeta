@@ -2,35 +2,50 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Keeta Dispatch Pro - Unit Economics</title>
+    <title>Keeta Dispatch Pro - Control Center</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; height: 100vh; background-color: #f0f2f5; }
-        #mapa { width: 70%; height: 100%; }
-        #painel { width: 30%; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto; background: #fff; border-left: 1px solid #ddd; z-index: 1000;}
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; flex-direction: row; height: 100vh; overflow: hidden; background-color: #f0f2f5; }
         
-        h1 { font-size: 22px; color: #1a252f; margin-bottom: 2px; }
-        .sub-header { color: #7f8c8d; font-size: 13px; margin-top: 0; margin-bottom: 15px; }
+        /* LAYOUT DE 3 COLUNAS */
+        #painel-pedidos { width: 22%; background: #fdfdfd; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 1000; box-shadow: 2px 0 5px rgba(0,0,0,0.05);}
+        #mapa { width: 53%; height: 100%; }
+        #painel-controle { width: 25%; background: #fff; border-left: 1px solid #ddd; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; z-index: 1000; box-shadow: -2px 0 5px rgba(0,0,0,0.05);}
         
-        #relogio-container { background: #1a252f; color: #00ffcc; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 12px; font-weight: bold; font-size: 28px; font-family: 'Courier New', monospace; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);}
-        .lbl-relogio { font-size: 11px; color: #bdc3c7; display: block; letter-spacing: 1px; margin-bottom: 4px;}
+        /* CABEÇALHOS */
+        h1 { font-size: 20px; color: #1a252f; margin-bottom: 2px; margin-top: 0;}
+        .sub-header { color: #7f8c8d; font-size: 12px; margin-top: 0; margin-bottom: 10px; }
+        
+        /* PAINEL DE PEDIDOS (ESQUERDA) */
+        #painel-pedidos-header { padding: 15px; background: #fff; border-bottom: 1px solid #eee; }
+        #lista-pedidos { flex: 1; overflow-y: auto; padding: 10px; background: #f8f9fa;}
+        
+        .pedido-card { background: #fff; border: 1px solid #eee; border-left: 4px solid #bdc3c7; border-radius: 6px; padding: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.3s;}
+        .pedido-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; margin-bottom: 5px; color: #2c3e50;}
+        .pedido-status { font-size: 11px; color: #555; margin-bottom: 5px; font-weight: 600; }
+        .pedido-info { font-size: 10px; color: #7f8c8d; margin-bottom: 2px;}
+        .badge-entregador { background: #34495e; color: white; padding: 2px 5px; border-radius: 4px; font-size: 9px; }
 
-        #alerta-surge { display: none; background: #e74c3c; color: white; text-align: center; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-bottom: 12px; animation: piscar 1.2s infinite; text-transform: uppercase; letter-spacing: 1px;}
+        /* PAINEL DE CONTROLE (DIREITA) */
+        #relogio-container { background: #1a252f; color: #00ffcc; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 24px; font-family: 'Courier New', monospace; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);}
+        .lbl-relogio { font-size: 10px; color: #bdc3c7; display: block; letter-spacing: 1px; margin-bottom: 2px;}
+
+        #alerta-surge { display: none; background: #e74c3c; color: white; text-align: center; padding: 6px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-bottom: 10px; animation: piscar 1.2s infinite; text-transform: uppercase; letter-spacing: 1px;}
         @keyframes piscar { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
-        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        .kpi-card { background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 5px solid #3498db; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
+        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+        .kpi-card { background: #f8f9fa; padding: 10px; border-radius: 6px; border-left: 4px solid #3498db; box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
         .kpi-titulo { font-size: 9px; color: #7f8c8d; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
-        .kpi-valor { font-size: 16px; font-weight: bold; color: #2c3e50; margin-top: 5px; }
+        .kpi-valor { font-size: 15px; font-weight: bold; color: #2c3e50; margin-top: 3px; }
         
         .border-green { border-left-color: #27ae60; }
         .border-purple { border-left-color: #9b59b6; }
         .border-orange { border-left-color: #f39c12; }
         .border-dark { border-left-color: #34495e; }
 
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: auto; }
         .btn-full { grid-column: span 2; }
-        button { color: white; border: none; padding: 12px; font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;}
+        button { color: white; border: none; padding: 10px; font-size: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;}
         .btn-simular { background: #2980b9; }
         .btn-simular:hover { background: #2471a3; }
         .btn-exportar { background: #217346; } 
@@ -38,7 +53,7 @@
         .btn-caos { background: #c0392b; }
         .btn-caos:hover { background: #a53125; }
         
-        #log { margin-top: 5px; margin-bottom: 15px; font-size: 11px; color: #444; background: #fdfdfd; border: 1px solid #e0e0e0; padding: 12px; border-radius: 6px; height: 180px; overflow-y: auto; line-height: 1.6; }
+        #log { margin-top: 5px; margin-bottom: 10px; font-size: 11px; color: #444; background: #fdfdfd; border: 1px solid #e0e0e0; padding: 10px; border-radius: 6px; height: 160px; overflow-y: auto; line-height: 1.5; }
         .log-time { font-weight: bold; color: #95a5a6; }
         .log-sucesso { color: #27ae60; font-weight: bold;}
         .log-movimento { color: #2980b9; font-weight: 600;}
@@ -46,7 +61,7 @@
         .log-rebalance { color: #8e44ad; font-style: italic; font-weight: 600;}
         .log-jit { color: #d35400; font-weight: bold; background: #fdf2e9; padding: 2px 4px; border-radius: 3px;}
         .log-mkt { color: #34495e; font-weight: bold;}
-        .log-bonus { color: #e67e22; font-weight: bold; background: #fdf2e9; padding: 2px 4px; border-radius: 3px; font-size: 11px;}
+        .log-bonus { color: #e67e22; font-weight: bold; background: #fdf2e9; padding: 2px 4px; border-radius: 3px;}
         
         .tag-bike { background: #2ecc71; color: white; padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: bold; text-transform: uppercase;}
         .tag-moto { background: #34495e; color: white; padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: bold; text-transform: uppercase;}
@@ -60,10 +75,21 @@
 </head>
 <body>
 
+    <div id="painel-pedidos">
+        <div id="painel-pedidos-header">
+            <h1>Live Orders</h1>
+            <p class="sub-header" style="margin-bottom: 0;">Monitoramento de Estados</p>
+            <div style="font-weight: bold; font-size: 13px; margin-top: 5px; color: #2980b9;" id="kpi-pedidos-ativos">0 ativos no mapa</div>
+        </div>
+        <div id="lista-pedidos">
+            <p style="font-size: 12px; color: #777; text-align: center; margin-top: 20px;">Nenhum pedido ativo.</p>
+        </div>
+    </div>
+    
     <div id="mapa"></div>
 
-    <div id="painel">
-        <h1>Keeta Dispatch Pro</h1>
+    <div id="painel-controle">
+        <h1>Keeta Command</h1>
         <p class="sub-header">Unit Economics & Operação</p>
 
         <div id="relogio-container">
@@ -96,7 +122,7 @@
             </div>
         </div>
 
-        <div id="log">🟢 Sistema Online: Todos os módulos validados.<br></div>
+        <div id="log">🟢 Sistema Online.<br></div>
 
         <div class="btn-group">
             <button class="btn-simular" onclick="gerarNovoPedido()">🍔 Simular Pedido</button>
@@ -146,18 +172,13 @@
         let filaRecuperacao = []; 
         let contadorPedidos = 1000;
         
-        // Estrutura de métricas refeita para evitar bugs no painel
+        let pedidosAtivosUI = []; 
+
         let metricas = { 
-            pedidosGerais: 0,
-            pedidosFullService: 0,
-            pedidosMarketplace: 0,
-            tempoTotalSLA: 0, 
-            repasseTotalEntregadores: 0, 
-            lucroTotalApp: 0, 
-            ganhoTotalRestaurantesFull: 0,
-            ganhoTotalRestaurantesMkt: 0
+            pedidosGerais: 0, pedidosFullService: 0, pedidosMarketplace: 0,
+            tempoTotalSLA: 0, repasseTotalEntregadores: 0, lucroTotalApp: 0, 
+            ganhoTotalRestaurantesFull: 0, ganhoTotalRestaurantesMkt: 0
         };
-        
         let historicoDeDados = [];
 
         function calcularDistanciaKM(lat1, lon1, lat2, lon2) {
@@ -172,9 +193,40 @@
             const log = document.getElementById('log'); log.innerHTML += `<span class="log-time">[${formatarHora(dataVirtual)}]</span> ${mensagem}<br>`; log.scrollTop = log.scrollHeight;
         }
 
-        // ==========================================
-        // O MOTOR DE REDISTRIBUIÇÃO PREDITIVA
-        // ==========================================
+        function atualizarPainelPedidos() {
+            const container = document.getElementById('lista-pedidos');
+            document.getElementById('kpi-pedidos-ativos').innerText = `${pedidosAtivosUI.length} ativos no mapa`;
+            
+            if (pedidosAtivosUI.length === 0) {
+                container.innerHTML = '<p style="font-size: 12px; color: #777; text-align: center; margin-top: 20px;">Nenhum pedido ativo no momento.</p>';
+                return;
+            }
+
+            let html = '';
+            pedidosAtivosUI.forEach(p => {
+                let corBorda = '#bdc3c7'; 
+                if (p.status === 'Fila de Emergência') corBorda = '#e74c3c'; 
+                else if (p.status === 'Aguardando Dispatch') corBorda = '#f1c40f'; 
+                else if (p.status === 'JIT (Postergado)') corBorda = '#e67e22'; 
+                else if (p.status === 'Indo ao Restaurante') corBorda = '#3498db'; 
+                else if (p.status === 'Aguardando Preparo') corBorda = '#9b59b6'; 
+                else if (p.status === 'Em Rota para Entrega') corBorda = '#2ecc71'; 
+                else if (p.status === 'Logística Rest. (MKT)') corBorda = '#34495e'; 
+
+                let entregadorHtml = p.entregadorDesignado ? `<span class="badge-entregador">${p.entregadorDesignado}</span>` : '';
+
+                html += `
+                <div class="pedido-card" style="border-left-color: ${corBorda}">
+                    <div class="pedido-header">Pedido #${p.id} ${entregadorHtml}</div>
+                    <div class="pedido-status">${p.status}</div>
+                    <div class="pedido-info">🏪 ${p.restaurante.nome}</div>
+                    <div class="pedido-info">💰 Ticket: R$ ${p.gmv.toFixed(2).replace('.',',')} | Vol: ${p.volume}</div>
+                </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
         function rebalancearFrota(isSurgeAtivo) {
             if (!isSurgeAtivo) return;
             let poloLat = -23.584, poloLon = -46.680;
@@ -188,9 +240,6 @@
             });
         }
 
-        // ==========================================
-        // O MOTOR DE DISPATCH (BATCHING & CAPACIDADE)
-        // ==========================================
         function rodarDispatch() {
             let pedidosProcessar = [...filaRecuperacao, ...filaDePedidos];
             if (pedidosProcessar.length === 0) return;
@@ -213,7 +262,6 @@
                     if (candidato.restaurante.id === pedidoBase.restaurante.id && (volumeLote + candidato.volume <= maxVolumeFormacao)) {
                         let distEntreClientes = calcularDistanciaKM(pedidoBase.latCliente, pedidoBase.lonCliente, candidato.latCliente, candidato.lonCliente);
                         
-                        // Trava para SLA: Não agrupa se distanciar muito
                         if (distEntreClientes <= 3.0) {
                             loteAtual.push(candidato);
                             volumeLote += candidato.volume;
@@ -254,13 +302,16 @@
                 if (entregadorDesignado) {
                     alocarLote(entregadorDesignado, loteObj.pedidos, menorTempoChegadaMin, isSurgeAtivo);
                 } else {
-                    loteObj.pedidos.forEach(p => filaDePedidos.push(p)); 
+                    loteObj.pedidos.forEach(p => {
+                        p.status = 'Aguardando Dispatch';
+                        filaDePedidos.push(p);
+                    }); 
                 }
             }
         }
 
         // ==========================================
-        // MÁQUINA DE ESTADOS (JIT & RECURSIVIDADE)
+        // MÁQUINA DE ESTADOS COM TELEMETRIA DETALHADA
         // ==========================================
         function alocarLote(entregador, lote, tempoViagemAteRestauranteMin, isSurgeAtivo) {
             entregador.ocupado = true; 
@@ -269,20 +320,30 @@
             let restaurante = lote[0].restaurante;
             let isBike = entregador.tipo === 'BIKE';
             let tagTipo = isBike ? '<span class="tag-bike">BIKE</span>' : '<span class="tag-moto">MOTO</span>';
+            let nomeEntregador = entregador.tipo + ' ' + entregador.id;
 
             let diferencaTempo = restaurante.tempoPreparoMin - tempoViagemAteRestauranteMin;
             let tempoPostergadoMin = diferencaTempo > 3 ? diferencaTempo - 2 : 0;
             let tempoEsperaNoRestauranteMin = diferencaTempo < 0 ? 0 : 2; 
 
+            lote.forEach(p => { p.status = 'JIT (Postergado)'; p.entregadorDesignado = nomeEntregador; });
+
             if (tempoPostergadoMin > 0) {
-                registrarLog(`<span class="log-jit">🧠 JIT: ${tagTipo} ${entregador.id} reservado. Despacho após ${Math.round(tempoPostergadoMin)}m. (Vol: ${lote.reduce((acc, p) => acc + p.volume, 0)}/${entregador.capMax})</span>`);
+                registrarLog(`<span class="log-jit">🧠 JIT: ${tagTipo} ${entregador.id} reservado. Despacho após ${Math.round(tempoPostergadoMin)}m.</span>`);
             } else {
                 entregador.marcador.setIcon(isBike ? iconeBikeOcupada : iconeMotoOcupada);
+                registrarLog(`<span class="log-movimento">🚀 ${tagTipo} ${entregador.id} a caminho do restaurante. (Leva ~${Math.round(tempoViagemAteRestauranteMin)}m)</span>`);
             }
 
             setTimeout(() => {
                 if(entregador.quebrado) return; 
                 entregador.marcador.setIcon(isBike ? iconeBikeOcupada : iconeMotoOcupada); 
+                
+                if (tempoPostergadoMin > 0) {
+                    registrarLog(`<span class="log-movimento">🚀 ${tagTipo} ${entregador.id} a caminho do restaurante. (Leva ~${Math.round(tempoViagemAteRestauranteMin)}m)</span>`);
+                }
+                
+                entregador.loteAtual.forEach(p => p.status = 'Indo ao Restaurante');
 
                 setTimeout(() => {
                     if(entregador.quebrado) return;
@@ -290,9 +351,14 @@
                     entregador.lat = restaurante.lat;
                     entregador.lon = restaurante.lon;
                     
+                    entregador.loteAtual.forEach(p => p.status = 'Aguardando Preparo');
+                    registrarLog(`<span class="log-movimento">🏪 ${tagTipo} ${entregador.id} no restaurante. Aguardando preparo (~${Math.round(tempoEsperaNoRestauranteMin)}m).</span>`);
+
                     setTimeout(() => {
                         if(entregador.quebrado) return;
                         
+                        entregador.loteAtual.forEach(p => p.status = 'Em Rota para Entrega');
+
                         let clienteAtualIndex = 0;
                         let latAtual = restaurante.lat;
                         let lonAtual = restaurante.lon;
@@ -314,6 +380,8 @@
                             let tempoViagem = distTrecho / (velocidadeReal / 60) + 3; 
 
                             tempoSLAEstimadoAcumulado += tempoViagem;
+                            
+                            registrarLog(`<span class="log-movimento">📦 ${tagTipo} ${entregador.id} a caminho do Pedido #${clienteDestino.id}. (Leva ~${Math.round(tempoViagem)}m)</span>`);
 
                             setTimeout(() => {
                                 if (entregador.quebrado) return;
@@ -333,7 +401,7 @@
                                 latAtual = clienteDestino.latCliente;
                                 lonAtual = clienteDestino.lonCliente;
                                 
-                                irParaProximoCliente(); // Loop Recursivo
+                                irParaProximoCliente(); 
                                 
                             }, tempoViagem * 1000); 
                         }
@@ -347,9 +415,6 @@
             }, tempoPostergadoMin * 1000); 
         }
 
-        // ==========================================
-        // RECUPERAÇÃO DE FALHAS (BOTÃO CAOS)
-        // ==========================================
         function simularImprevisto() {
             let ocupados = frota.filter(e => e.ocupado && !e.quebrado && e.loteAtual && e.loteAtual.length > 0);
             if (ocupados.length === 0) {
@@ -362,7 +427,11 @@
             azarado.ocupado = false;
             azarado.marcador.setIcon(iconeQuebrado);
 
-            azarado.loteAtual.forEach(p => filaRecuperacao.push(p));
+            azarado.loteAtual.forEach(p => {
+                p.status = 'Fila de Emergência'; 
+                p.entregadorDesignado = null;
+                filaRecuperacao.push(p);
+            });
             let idsRecuperados = azarado.loteAtual.map(p => `#${p.id}`).join(', ');
             azarado.loteAtual = [];
 
@@ -376,69 +445,42 @@
             }, 20000);
         }
 
-        // ==========================================
-        // CÁLCULO ECONÔMICO (FULL SERVICE)
-        // ==========================================
         function processarFinanceiroFullService(entregador, pedido, distPercorridaKM, isSurgeAtivo, isPrimeiraEntrega, slaFinal) {
             
-            // Receita (App cobra 25% + 3.2% do restaurante e repassa o resto)
+            pedidosAtivosUI = pedidosAtivosUI.filter(p => p.id !== pedido.id);
+
             let receitaApp = (pedido.gmv * 0.25) + (pedido.gmv * 0.032);
             let ganhoRestaurante = pedido.gmv - receitaApp;
 
-            // Custo Entregador (Max base ou R$3 por batch)
-            let ganhoNestaPerna = 0;
-            if (isPrimeiraEntrega) {
-                ganhoNestaPerna = Math.max(7.50, 7.00 + (distPercorridaKM * 1.50));
-            } else {
-                ganhoNestaPerna = 3.00; // Regra de Agrupamento
-            }
-            
+            let ganhoNestaPerna = isPrimeiraEntrega ? Math.max(7.50, 7.00 + (distPercorridaKM * 1.50)) : 3.00;
             let bonusSurge = isSurgeAtivo ? 2.50 : 0;
             let ganhoLogisticoReal = ganhoNestaPerna + bonusSurge;
 
-            // Gamificação
-            entregador.corridasCompletadas++;
-            let bonusGamificacao = 0;
-            if (entregador.corridasCompletadas >= 5) {
-                bonusGamificacao = 10.00;
-                entregador.corridasCompletadas = 0; 
-                registrarLog(`<span class="log-bonus">⭐ DESAFIO COMPLETO! ${entregador.tipo} ${entregador.id} ganhou +R$ 10,00 de retenção.</span>`);
-            }
+            let lucroLiquidoApp = receitaApp - ganhoLogisticoReal;
 
-            let custoTotalOperacao = ganhoLogisticoReal + bonusGamificacao;
-            let lucroLiquidoApp = receitaApp - custoTotalOperacao;
-
-            // Alimenta Métricas do Dashboard Global
             metricas.pedidosGerais++;
             metricas.pedidosFullService++;
             metricas.tempoTotalSLA += slaFinal;
-            metricas.repasseTotalEntregadores += custoTotalOperacao;
+            metricas.repasseTotalEntregadores += ganhoLogisticoReal;
             metricas.lucroTotalApp += lucroLiquidoApp;
             metricas.ganhoTotalRestaurantesFull += ganhoRestaurante;
 
             historicoDeDados.push({
-                id_pedido: pedido.id,
-                tipo_veiculo: entregador.tipo,
-                tipo_servico: "FULL SERVICE",
-                gmv: pedido.gmv.toFixed(2),
-                receita_app: receitaApp.toFixed(2),
-                custo_logistico: custoTotalOperacao.toFixed(2),
-                lucro_liquido: lucroLiquidoApp.toFixed(2)
+                id_pedido: pedido.id, tipo_veiculo: entregador.tipo, tipo_servico: "FULL SERVICE",
+                gmv: pedido.gmv.toFixed(2), receita_app: receitaApp.toFixed(2),
+                custo_logistico: ganhoLogisticoReal.toFixed(2), lucro_liquido: lucroLiquidoApp.toFixed(2)
             });
 
-            let tagTipo = entregador.tipo === 'BIKE' ? '<span class="tag-bike">BIKE</span>' : '<span class="tag-moto">MOTO</span>';
-            registrarLog(`<span class="log-sucesso">✅ Full Service #${pedido.id} entregue por ${tagTipo}.</span>`);
+            registrarLog(`<span class="log-sucesso">✅ Pedido #${pedido.id} entregue.</span> (Feito em ${Math.round(slaFinal)}m | Lucro: R$ ${lucroLiquidoApp.toFixed(2).replace('.', ',')})`);
             atualizarDashboard();
         }
 
-        // ==========================================
-        // CÁLCULO ECONÔMICO (MARKETPLACE)
-        // ==========================================
         function processarFinanceiroMarketplace(pedido) {
-            // App apenas processa o pagamento (12% + 3.2%)
+            pedidosAtivosUI = pedidosAtivosUI.filter(p => p.id !== pedido.id);
+
             let receitaApp = (pedido.gmv * 0.12) + (pedido.gmv * 0.032);
             let ganhoRestaurante = pedido.gmv - receitaApp;
-            let lucroLiquidoApp = receitaApp; // Custo logístico zero pro app
+            let lucroLiquidoApp = receitaApp; 
 
             metricas.pedidosGerais++;
             metricas.pedidosMarketplace++;
@@ -446,13 +488,9 @@
             metricas.ganhoTotalRestaurantesMkt += ganhoRestaurante;
 
             historicoDeDados.push({
-                id_pedido: pedido.id,
-                tipo_veiculo: "FROTA RESTAURANTE",
-                tipo_servico: "MARKETPLACE",
-                gmv: pedido.gmv.toFixed(2),
-                receita_app: receitaApp.toFixed(2),
-                custo_logistico: "0.00",
-                lucro_liquido: lucroLiquidoApp.toFixed(2)
+                id_pedido: pedido.id, tipo_veiculo: "FROTA RESTAURANTE", tipo_servico: "MARKETPLACE",
+                gmv: pedido.gmv.toFixed(2), receita_app: receitaApp.toFixed(2),
+                custo_logistico: "0.00", lucro_liquido: lucroLiquidoApp.toFixed(2)
             });
 
             mapa.removeLayer(pedido.marcadorCliente);
@@ -461,9 +499,6 @@
             atualizarDashboard();
         }
 
-        // ==========================================
-        // UI & EVENTOS GERAIS
-        // ==========================================
         function baixarCSV() {
             if (historicoDeDados.length === 0) return alert("Simule pedidos antes.");
             let csvContent = "data:text/csv;charset=utf-8,ID Pedido;Modalidade;Veiculo;GMV (R$);Receita App (R$);Custo Logistico (R$);Lucro Liquido App (R$)\n";
@@ -483,8 +518,7 @@
             let variacaoRaio = Math.random() < 0.5 ? 0.03 : 0.08; 
             const latCliente = rest.lat + (Math.random() - 0.5) * variacaoRaio; 
             const lonCliente = rest.lon + (Math.random() - 0.5) * variacaoRaio;
-
-            let gmvAleatorio = 40 + Math.random() * 80; // Ticket Médio: R$40 a R$120
+            let gmvAleatorio = 40 + Math.random() * 80; 
 
             let novoPedido = {
                 id: contadorPedidos,
@@ -493,38 +527,35 @@
                 lonCliente: lonCliente,
                 volume: Math.random() > 0.8 ? 2 : 1, 
                 gmv: gmvAleatorio,
+                status: 'Aguardando Dispatch',
+                entregadorDesignado: null,
                 marcadorCliente: L.marker([latCliente, lonCliente], {icon: iconeCliente}).addTo(mapa)
             };
 
-            // 20% Marketplace, 80% Full Service
+            pedidosAtivosUI.push(novoPedido);
+
             if (Math.random() < 0.20) {
-                setTimeout(() => processarFinanceiroMarketplace(novoPedido), 1000);
+                novoPedido.status = 'Logística Rest. (MKT)';
+                setTimeout(() => processarFinanceiroMarketplace(novoPedido), 3000); 
             } else {
-                registrarLog(`🍔 Pedido #${contadorPedidos} aguardando roteirização...`);
                 filaDePedidos.push(novoPedido);
                 rodarDispatch();
             }
         }
 
-        // ATUALIZAÇÃO CORRIGIDA PARA EVITAR BUGS DE NAN (Not a Number)
         function atualizarDashboard() {
-            // SLA Médio
             let sla = (metricas.tempoTotalSLA / metricas.pedidosFullService) || 0;
             document.getElementById('kpi-sla').innerText = `${Math.round(sla)} min`;
             
-            // Ganho Médio do Entregador
             let ganhoEntregador = (metricas.repasseTotalEntregadores / metricas.pedidosFullService) || 0;
             document.getElementById('kpi-ganho-entregador').innerText = `R$ ${ganhoEntregador.toFixed(2).replace('.', ',')}`;
             
-            // Ganho Médio Restaurante (Full Service)
             let ganhoRestFull = (metricas.ganhoTotalRestaurantesFull / metricas.pedidosFullService) || 0;
             document.getElementById('kpi-ganho-rest-full').innerText = `R$ ${ganhoRestFull.toFixed(2).replace('.', ',')}`;
             
-            // Ganho Médio Restaurante (Marketplace)
             let ganhoRestMkt = (metricas.ganhoTotalRestaurantesMkt / metricas.pedidosMarketplace) || 0;
             document.getElementById('kpi-ganho-rest-mkt').innerText = `R$ ${ganhoRestMkt.toFixed(2).replace('.', ',')}`;
             
-            // Lucro Médio do Aplicativo (Geral)
             let lucroApp = (metricas.lucroTotalApp / metricas.pedidosGerais) || 0;
             document.getElementById('kpi-lucro-app').innerText = `R$ ${lucroApp.toFixed(2).replace('.', ',')}`;
         }
@@ -532,7 +563,9 @@
         setInterval(() => {
             dataVirtual.setMinutes(dataVirtual.getMinutes() + 1);
             document.getElementById('relogio-display').innerText = formatarHora(dataVirtual);
+            
             rodarDispatch(); 
+            atualizarPainelPedidos(); 
         }, 1000); 
 
     </script>
