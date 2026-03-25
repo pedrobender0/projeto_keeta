@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Keeta Dispatch Pro - Realidade Caótica</title>
+    <title>Algoritmo Keeta - Rota Imune</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; flex-direction: row; height: 100vh; overflow: hidden; background-color: #f0f2f5; }
@@ -89,22 +89,22 @@
 
     <div id="painel-controle">
         <h1>Keeta Command</h1>
-        <p class="sub-header">Operação, Clima & VIP Routing</p>
+        <p class="sub-header">Combinatorial, Holding-Time e Batching Dinâmico</p>
 
         <div id="relogio-container">
             <span class="lbl-relogio">HORÁRIO DO SISTEMA</span>
             <span id="relogio-display">12:00</span>
         </div>
         
-        <div id="alerta-surge">🔥 SURGE PRICING (Alta Demanda)</div>
+        <div id="alerta-surge">🔥 ALTA DEMANDA: Redistribuindo frota</div>
 
         <div class="kpi-grid">
             <div class="kpi-card border-orange">
-                <div class="kpi-titulo">SLA Médio (Tempo)</div>
+                <div class="kpi-titulo">Tempo médio/Entrega</div>
                 <div class="kpi-valor" id="kpi-sla">0 min</div>
             </div>
             <div class="kpi-card border-purple">
-                <div class="kpi-titulo">Média/Entregador</div>
+                <div class="kpi-titulo">Ganho Médio/Entregador</div>
                 <div class="kpi-valor" id="kpi-ganho-entregador">R$ 0,00</div>
             </div>
             <div class="kpi-card border-dark">
@@ -121,7 +121,7 @@
             </div>
         </div>
 
-        <div id="log">🟢 Sistema Online: Variáveis do mundo real injetadas.<br></div>
+        <div id="log">🟢 Sistema Online: Inicie a simulação<br></div>
 
         <div class="btn-group">
             <button class="btn-simular" onclick="gerarNovoPedido()">🍔 Pedido Aleatório</button>
@@ -212,7 +212,7 @@
                 frota[3].isOffline = true;
                 if(!frota[3].ocupado) frota[3].marcador.setIcon(iconeOffline);
                 
-                registrarLog(`<span class="log-caos">⛈️ TEMPESTADE: Velocidade de frota reduzida e Bike 4 ficou OFFLINE.</span>`);
+                registrarLog(`<span class="log-caos">⛈️ CHUVA: Velocidade de frota reduzida e Bike 4 ficou OFFLINE.</span>`);
             } else {
                 mapaDiv.style.filter = 'none';
                 btn.innerHTML = '⛈️ Fazer Chover';
@@ -455,7 +455,7 @@
                                 if (isNoShow) {
                                     clienteDestino.status = 'Aguardando Cliente (No-Show)';
                                     atualizarPainelPedidos();
-                                    registrarLog(`<span class="log-caos">🚪 NO-SHOW: Cliente não atende. ${tagTipo} ${entregador.id} retido por 10m na porta.</span>`);
+                                    registrarLog(`<span class="log-caos">🚪 No-Show: Cliente não atende. ${tagTipo} ${entregador.id} retido por 10m na porta.</span>`);
                                 }
                                 
                                 setTimeout(() => {
@@ -510,7 +510,7 @@
             let ids = azarado.loteAtual.map(p => `#${p.id}`).join(', ');
             azarado.loteAtual = [];
 
-            registrarLog(`<span class="log-caos">💥 CRÍTICO: ${azarado.tipo} ${azarado.id} avariado! Pedidos [${ids}] p/ Fila de Emergência.</span>`);
+            registrarLog(`<span class="log-caos">💥 Acidente: ${azarado.tipo} ${azarado.id} sofreu um acidente! Pedidos [${ids}] p/ Fila de Emergência.</span>`);
             rodarDispatch();
             
             setTimeout(() => {
