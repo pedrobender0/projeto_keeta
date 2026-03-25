@@ -7,29 +7,29 @@
     <style>
         body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; height: 100vh; background-color: #f0f2f5; }
         #mapa { width: 70%; height: 100%; }
-        #painel { width: 30%; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto; background: #fff; border-left: 1px solid #ddd;}
+        #painel { width: 30%; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto; background: #fff; border-left: 1px solid #ddd; z-index: 1000;}
         
-        h1 { font-size: 20px; color: #1a252f; margin-bottom: 2px; }
-        .sub-header { color: #7f8c8d; font-size: 13px; margin-top: 0; margin-bottom: 10px; }
+        h1 { font-size: 22px; color: #1a252f; margin-bottom: 2px; }
+        .sub-header { color: #7f8c8d; font-size: 13px; margin-top: 0; margin-bottom: 15px; }
         
-        #relogio-container { background: #1a252f; color: #00ffcc; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 24px; font-family: 'Courier New', monospace; }
-        .lbl-relogio { font-size: 10px; color: #bdc3c7; display: block; letter-spacing: 1px; margin-bottom: 2px;}
+        #relogio-container { background: #1a252f; color: #00ffcc; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 12px; font-weight: bold; font-size: 28px; font-family: 'Courier New', monospace; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);}
+        .lbl-relogio { font-size: 11px; color: #bdc3c7; display: block; letter-spacing: 1px; margin-bottom: 4px;}
 
-        #alerta-surge { display: none; background: #e74c3c; color: white; text-align: center; padding: 5px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 10px; animation: piscar 1.5s infinite; }
+        #alerta-surge { display: none; background: #e74c3c; color: white; text-align: center; padding: 8px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-bottom: 12px; animation: piscar 1.2s infinite; text-transform: uppercase; letter-spacing: 1px;}
         @keyframes piscar { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
-        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-        .kpi-card { background: #f8f9fa; padding: 10px; border-radius: 6px; border-left: 4px solid #3498db; }
-        .kpi-titulo { font-size: 9px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
-        .kpi-valor { font-size: 16px; font-weight: bold; color: #2c3e50; margin-top: 5px; }
+        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .kpi-card { background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 5px solid #3498db; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
+        .kpi-titulo { font-size: 10px; color: #7f8c8d; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
+        .kpi-valor { font-size: 18px; font-weight: bold; color: #2c3e50; margin-top: 5px; }
         
         .border-green { border-left-color: #27ae60; }
         .border-purple { border-left-color: #9b59b6; }
         .border-orange { border-left-color: #f39c12; }
 
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: auto; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; }
         .btn-full { grid-column: span 2; }
-        button { color: white; border: none; padding: 10px; font-size: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button { color: white; border: none; padding: 12px; font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;}
         .btn-simular { background: #2980b9; }
         .btn-simular:hover { background: #2471a3; }
         .btn-exportar { background: #217346; } 
@@ -37,14 +37,32 @@
         .btn-caos { background: #c0392b; }
         .btn-caos:hover { background: #a53125; }
         
-        #log { margin-top: 5px; margin-bottom: 10px; font-size: 11px; color: #444; background: #fdfdfd; border: 1px solid #e0e0e0; padding: 10px; border-radius: 4px; height: 150px; overflow-y: auto; line-height: 1.5; }
+        #log { margin-top: 5px; margin-bottom: 15px; font-size: 12px; color: #444; background: #fdfdfd; border: 1px solid #e0e0e0; padding: 12px; border-radius: 6px; height: 180px; overflow-y: auto; line-height: 1.6; }
         .log-time { font-weight: bold; color: #95a5a6; }
         .log-sucesso { color: #27ae60; font-weight: bold;}
-        .log-movimento { color: #2980b9; font-weight: 500;}
-        .log-caos { color: #c0392b; font-weight: bold; background: #fadbd8; padding: 2px;}
-        .log-rebalance { color: #8e44ad; font-style: italic;}
-        .tag-bike { background: #2ecc71; color: white; padding: 1px 4px; border-radius: 3px; font-size: 9px;}
-        .tag-moto { background: #34495e; color: white; padding: 1px 4px; border-radius: 3px; font-size: 9px;}
+        .log-movimento { color: #2980b9; font-weight: 600;}
+        .log-caos { color: #c0392b; font-weight: bold; background: #fadbd8; padding: 2px 4px; border-radius: 3px;}
+        .log-rebalance { color: #8e44ad; font-style: italic; font-weight: 600;}
+        .log-jit { color: #d35400; font-weight: bold; background: #fdf2e9; padding: 2px 4px; border-radius: 3px;}
+        
+        .tag-bike { background: #2ecc71; color: white; padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: bold; text-transform: uppercase;}
+        .tag-moto { background: #34495e; color: white; padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: bold; text-transform: uppercase;}
+
+        /* CSS DOS NOVOS ÍCONES DO MAPA */
+        .marker-custom {
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; border: 2px solid #fff;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+            font-size: 20px;
+        }
+        .marker-pulse {
+            animation: pulse-red 1s infinite;
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.8); }
+            70% { box-shadow: 0 0 0 12px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
     </style>
 </head>
 <body>
@@ -52,15 +70,15 @@
     <div id="mapa"></div>
 
     <div id="painel">
-        <h1>Keeta Dispatch</h1>
+        <h1>Keeta Dispatch Pro</h1>
         <p class="sub-header">Otimização, Capacidade e Resiliência</p>
 
         <div id="relogio-container">
-            <span class="lbl-relogio">HORÁRIO DO SERVIDOR</span>
+            <span class="lbl-relogio">HORÁRIO DO SISTEMA</span>
             <span id="relogio-display">12:00</span>
         </div>
         
-        <div id="alerta-surge">🔥 ALTA DEMANDA: REDISTRIBUINDO FROTA</div>
+        <div id="alerta-surge">🔥 SURGE PRICING: REDISTRIBUINDO FROTA</div>
 
         <div class="kpi-grid">
             <div class="kpi-card border-orange">
@@ -68,7 +86,7 @@
                 <div class="kpi-valor" id="kpi-sla">-- min</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-titulo">Corridas (Entregas)</div>
+                <div class="kpi-titulo">Entregas Concluídas</div>
                 <div class="kpi-valor" id="kpi-entregas">0</div>
             </div>
             <div class="kpi-card border-purple">
@@ -81,12 +99,12 @@
             </div>
         </div>
 
-        <div id="log">Motor V3.0: Capacidade, Rebalanceamento e Caos ativados.<br></div>
+        <div id="log">🟢 Sistema Online: Capacidade, Rebalanceamento e Caos ativados.<br></div>
 
         <div class="btn-group">
-            <button class="btn-simular" onclick="gerarNovoPedido()">+ Simular Pedido</button>
-            <button class="btn-caos" onclick="simularImprevisto()">⚠️ Furo de Pneu</button>
-            <button class="btn-exportar btn-full" onclick="baixarCSV()">📊 Exportar Dados (CSV Excel)</button>
+            <button class="btn-simular" onclick="gerarNovoPedido()">🍔 Simular Pedido</button>
+            <button class="btn-caos" onclick="simularImprevisto()">⚠️ Acidente (Caos)</button>
+            <button class="btn-exportar btn-full" onclick="baixarCSV()">📊 Exportar Dados (CSV)</button>
         </div>
     </div>
 
@@ -101,31 +119,45 @@
         const mapa = L.map('mapa').setView([-23.585, -46.678], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapa);
 
-        const iconeRest = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448657.png', iconSize: [30, 30] });
-        const iconeCliente = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/2555/2555572.png', iconSize: [20, 20] });
-        const iconeMotoLivre = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1156/1156645.png', iconSize: [25, 25] });
-        const iconeMotoOcupada = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/756/756940.png', iconSize: [30, 30] });
-        const iconeBikeLivre = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/2972/2972185.png', iconSize: [22, 22] });
-        const iconeBikeOcupada = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3063/3063822.png', iconSize: [28, 28] });
-        const iconeQuebrado = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1802/1802611.png', iconSize: [35, 35] });
+        // ==========================================
+        // NOVOS ÍCONES CUSTOMIZADOS (Mais claros e chamativos)
+        // ==========================================
+        function criarIcone(emoji, corBg, extraClass = '') {
+            return L.divIcon({
+                html: `<div class="marker-custom ${extraClass}" style="background-color: ${corBg}; width: 35px; height: 35px;">${emoji}</div>`,
+                className: '',
+                iconSize: [35, 35],
+                iconAnchor: [17, 17],
+                popupAnchor: [0, -17]
+            });
+        }
+
+        const iconeRest = criarIcone('🏪', '#2c3e50'); // Azul Escuro
+        const iconeCliente = criarIcone('📍', '#8e44ad'); // Roxo
+        
+        // Cores de Status: Verde = Livre, Laranja = Ocupado, Vermelho = Quebrado
+        const iconeMotoLivre = criarIcone('🛵', '#27ae60'); 
+        const iconeMotoOcupada = criarIcone('🛵', '#f39c12'); 
+        const iconeBikeLivre = criarIcone('🚲', '#27ae60'); 
+        const iconeBikeOcupada = criarIcone('🚲', '#f39c12'); 
+        const iconeQuebrado = criarIcone('⚠️', '#e74c3c', 'marker-pulse'); // Vermelho Piscando
 
         const restaurantes = [
             { id: 'R1', lat: -23.586, lon: -46.679, nome: "Hamburgueria (Polo Sul)", tempoPreparoMin: 12 },
             { id: 'R2', lat: -23.582, lon: -46.682, nome: "Pizzaria (Polo Sul)", tempoPreparoMin: 22 }
         ];
-        restaurantes.forEach(r => L.marker([r.lat, r.lon], {icon: iconeRest}).addTo(mapa).bindPopup(`${r.nome}`));
+        restaurantes.forEach(r => L.marker([r.lat, r.lon], {icon: iconeRest}).addTo(mapa).bindPopup(`<b>${r.nome}</b><br>Preparo: ${r.tempoPreparoMin}m`));
 
         let frota = [
-            // Capacidade: MOTO = 3 slots, BIKE = 2 slots
-            { id: 1, tipo: 'MOTO', capMax: 3, lat: -23.570, lon: -46.660, ocupado: false, quebrado: false, marcador: L.marker([-23.570, -46.660], {icon: iconeMotoLivre}).addTo(mapa) },
-            { id: 2, tipo: 'MOTO', capMax: 3, lat: -23.600, lon: -46.690, ocupado: false, quebrado: false, marcador: L.marker([-23.600, -46.690], {icon: iconeMotoLivre}).addTo(mapa) },
-            { id: 3, tipo: 'BIKE', capMax: 2, lat: -23.584, lon: -46.675, ocupado: false, quebrado: false, marcador: L.marker([-23.584, -46.675], {icon: iconeBikeLivre}).addTo(mapa) },
-            { id: 4, tipo: 'BIKE', capMax: 2, lat: -23.588, lon: -46.680, ocupado: false, quebrado: false, marcador: L.marker([-23.588, -46.680], {icon: iconeBikeLivre}).addTo(mapa) },
-            { id: 5, tipo: 'MOTO', capMax: 3, lat: -23.575, lon: -46.695, ocupado: false, quebrado: false, marcador: L.marker([-23.575, -46.695], {icon: iconeMotoLivre}).addTo(mapa) }
+            { id: 1, tipo: 'MOTO', capMax: 3, lat: -23.570, lon: -46.660, ocupado: false, quebrado: false, marcador: L.marker([-23.570, -46.660], {icon: iconeMotoLivre}).addTo(mapa).bindPopup("Moto 1") },
+            { id: 2, tipo: 'MOTO', capMax: 3, lat: -23.600, lon: -46.690, ocupado: false, quebrado: false, marcador: L.marker([-23.600, -46.690], {icon: iconeMotoLivre}).addTo(mapa).bindPopup("Moto 2") },
+            { id: 3, tipo: 'BIKE', capMax: 2, lat: -23.584, lon: -46.675, ocupado: false, quebrado: false, marcador: L.marker([-23.584, -46.675], {icon: iconeBikeLivre}).addTo(mapa).bindPopup("Bike 3") },
+            { id: 4, tipo: 'BIKE', capMax: 2, lat: -23.588, lon: -46.680, ocupado: false, quebrado: false, marcador: L.marker([-23.588, -46.680], {icon: iconeBikeLivre}).addTo(mapa).bindPopup("Bike 4") },
+            { id: 5, tipo: 'MOTO', capMax: 3, lat: -23.575, lon: -46.695, ocupado: false, quebrado: false, marcador: L.marker([-23.575, -46.695], {icon: iconeMotoLivre}).addTo(mapa).bindPopup("Moto 5") }
         ];
 
         let filaDePedidos = [];
-        let filaRecuperacao = []; // Pedidos que sofreram acidentes/imprevistos
+        let filaRecuperacao = []; 
         let contadorPedidos = 1000;
         let metricas = { pedidosEntregues: 0, repasseTotalEntregadores: 0, lucroTotalApp: 0, tempoTotalSLA: 0 };
         let historicoDeDados = [];
@@ -147,33 +179,30 @@
         }
 
         // ==========================================
-        // 1. O MOTOR DE REDISTRIBUIÇÃO PREDITIVA (REBALANCEAMENTO)
+        // O MOTOR DE REDISTRIBUIÇÃO PREDITIVA
         // ==========================================
         function rebalancearFrota(isSurgeAtivo) {
             if (!isSurgeAtivo) return;
-            // Se tem Surge, move as motos livres sutilmente em direção aos restaurantes
-            let poloLat = -23.584; // Centro de gravidade dos restaurantes
+            let poloLat = -23.584; 
             let poloLon = -46.680;
             
             frota.forEach(ent => {
                 if (!ent.ocupado && !ent.quebrado) {
                     let dist = calcularDistanciaKM(ent.lat, ent.lon, poloLat, poloLon);
-                    if (dist > 1.0) { // Só move se estiver longe
-                        // Dá um passinho em direção ao polo
+                    if (dist > 1.0) { 
                         ent.lat += (poloLat - ent.lat) * 0.1;
                         ent.lon += (poloLon - ent.lon) * 0.1;
                         ent.marcador.setLatLng([ent.lat, ent.lon]);
                     }
                 }
             });
-            registrarLog(`<span class="log-rebalance">🔄 Redistribuição Ociosa: Frota livre direcionada ao Polo Sul.</span>`);
+            registrarLog(`<span class="log-rebalance">🔄 Redistribuição: Frota livre direcionada ao foco de calor.</span>`);
         }
 
         // ==========================================
-        // 2. O MOTOR DE DISPATCH (Com Capacidade de Bag)
+        // O MOTOR DE DISPATCH
         // ==========================================
         function rodarDispatch() {
-            // Prioriza os pedidos que sofreram imprevistos (furo de pneu)
             let pedidosProcessar = [...filaRecuperacao, ...filaDePedidos];
             if (pedidosProcessar.length === 0) return;
 
@@ -190,15 +219,13 @@
 
                 for(let i = 0; i < pedidosProcessar.length; i++) {
                     let candidato = pedidosProcessar[i];
-                    // REGRA DE CAPACIDADE VOLUMÉTRICA ADICIONADA:
                     if (candidato.restaurante.id === pedidoBase.restaurante.id && (volumeLote + candidato.volume <= 3)) {
                         let distEntreClientes = calcularDistanciaKM(pedidoBase.latCliente, pedidoBase.lonCliente, candidato.latCliente, candidato.lonCliente);
                         if (distEntreClientes <= 2.5) {
                             loteAtual.push(candidato);
                             volumeLote += candidato.volume;
                             pedidosProcessar.splice(i, 1);
-                            i--; // Ajusta o index após remover
-                            // Não dá break se a bag aguentar mais
+                            i--; 
                         }
                     }
                 }
@@ -216,7 +243,6 @@
                 let distTotalEstimada = calcularDistanciaKM(restauranteDoLote.lat, restauranteDoLote.lon, loteObj.pedidos[0].latCliente, loteObj.pedidos[0].lonCliente);
 
                 for (let entregador of frota) {
-                    // Verifica se está livre, não quebrado E se a BAG aguenta o volume do lote
                     if (!entregador.ocupado && !entregador.quebrado && entregador.capMax >= loteObj.volumeTotal) {
                         let isBike = entregador.tipo === 'BIKE';
                         if (isBike && distTotalEstimada > 3.0) continue; 
@@ -236,14 +262,13 @@
                 if (entregadorDesignado) {
                     alocarLote(entregadorDesignado, loteObj.pedidos, menorTempoChegadaMin, isSurgeAtivo);
                 } else {
-                    loteObj.pedidos.forEach(p => filaDePedidos.push(p)); // Volta pra fila normal
+                    loteObj.pedidos.forEach(p => filaDePedidos.push(p)); 
                 }
             }
         }
 
         function alocarLote(entregador, lote, tempoViagemAteRestauranteMin, isSurgeAtivo) {
             entregador.ocupado = true; 
-            // Salva o lote no objeto do entregador para podermos resgatá-lo se houver um imprevisto
             entregador.loteAtual = lote; 
             
             let restaurante = lote[0].restaurante;
@@ -257,14 +282,13 @@
             let tempoSLAEstimado = tempoPostergadoMin + tempoViagemAteRestauranteMin + tempoEsperaNoRestauranteMin;
 
             if (tempoPostergadoMin > 0) {
-                registrarLog(`<span class="log-jit">🧠 JIT: ${tagTipo} ${entregador.id} aguardando ${Math.round(tempoPostergadoMin)}m. (Vol: ${lote.reduce((acc, p) => acc + p.volume, 0)}/${entregador.capMax})</span>`);
+                registrarLog(`<span class="log-jit">🧠 JIT: ${tagTipo} ${entregador.id} reservado(a). Segurando chamada por ${Math.round(tempoPostergadoMin)}m. (Vol: ${lote.reduce((acc, p) => acc + p.volume, 0)}/${entregador.capMax})</span>`);
             } else {
                 entregador.marcador.setIcon(isBike ? iconeBikeOcupada : iconeMotoOcupada);
             }
 
-            // MÁQUINA DE ESTADOS COM VERIFICAÇÃO DE "QUEBRADO"
             setTimeout(() => {
-                if(entregador.quebrado) return; // Aborta fluxo se quebrou
+                if(entregador.quebrado) return; 
                 entregador.marcador.setIcon(isBike ? iconeBikeOcupada : iconeMotoOcupada); 
 
                 setTimeout(() => {
@@ -276,7 +300,6 @@
                     setTimeout(() => {
                         if(entregador.quebrado) return;
                         
-                        // Fluxo da Entrega 1
                         let c1 = lote[0];
                         let distC1 = calcularDistanciaKM(restaurante.lat, restaurante.lon, c1.latCliente, c1.lonCliente);
                         let tempoViagemC1 = distC1 / ((isBike ? VEL_BIKE_KMH : VEL_MOTO_KMH) * 0.6 / 60) + 3; 
@@ -291,11 +314,9 @@
                             mapa.removeLayer(c1.marcadorCliente);
                             metricas.tempoTotalSLA += tempoSLAEstimado;
                             
-                            // Remove do lote pois entregou com sucesso
                             entregador.loteAtual = entregador.loteAtual.filter(p => p.id !== c1.id);
                             processarFinanceiro(entregador, c1, distC1, restaurante, isSurgeAtivo, lote.length === 1);
 
-                            // Fluxo da Entrega 2 (se houver)
                             if (lote.length > 1) {
                                 let c2 = lote[1];
                                 let distC2 = calcularDistanciaKM(c1.latCliente, c1.lonCliente, c2.latCliente, c2.lonCliente);
@@ -326,36 +347,32 @@
         }
 
         // ==========================================
-        // 3. RECUPERAÇÃO DE FALHAS (EVENTO IMPREVISTO)
+        // RECUPERAÇÃO DE FALHAS (BOTÃO CAOS)
         // ==========================================
         function simularImprevisto() {
-            // Acha um entregador que esteja ativamente entregando um pedido
             let ocupados = frota.filter(e => e.ocupado && !e.quebrado && e.loteAtual && e.loteAtual.length > 0);
             if (ocupados.length === 0) {
-                alert("Nenhum entregador em rota para simular o acidente. Gere pedidos primeiro.");
+                alert("Nenhum entregador em rota com pedidos para simular o acidente. Gere pedidos primeiro.");
                 return;
             }
 
             let azarado = ocupados[Math.floor(Math.random() * ocupados.length)];
-            azarado.quebrado = true; // Quebra a máquina de estados dele
+            azarado.quebrado = true; 
             azarado.ocupado = false;
             azarado.marcador.setIcon(iconeQuebrado);
 
-            // Joga os pedidos que ele carregava na Fila de Recuperação (Prioridade Máxima)
             azarado.loteAtual.forEach(p => filaRecuperacao.push(p));
             let idsRecuperados = azarado.loteAtual.map(p => `#${p.id}`).join(', ');
             azarado.loteAtual = [];
 
-            registrarLog(`<span class="log-caos">⚠️ ALERTA: ${azarado.tipo} ${azarado.id} furou o pneu! Pedidos ${idsRecuperados} em reatribuição de emergência.</span>`);
+            registrarLog(`<span class="log-caos">💥 ALERTA CRÍTICO: ${azarado.tipo} ${azarado.id} inoperante! Pedidos ${idsRecuperados} em reatribuição de emergência.</span>`);
             
-            // Roda o dispatcher para salvar o pedido imediatamente
             rodarDispatch();
             
-            // O mecânico arruma a moto depois de 20 minutos de simulação (20 segundos)
             setTimeout(() => {
                 azarado.quebrado = false;
                 azarado.marcador.setIcon(azarado.tipo === 'BIKE' ? iconeBikeLivre : iconeMotoLivre);
-                registrarLog(`🔧 Conserto finalizado. ${azarado.tipo} ${azarado.id} voltou à frota.`);
+                registrarLog(`🔧 Conserto finalizado. ${azarado.tipo} ${azarado.id} voltou à base.`);
             }, 20000);
         }
 
@@ -428,7 +445,7 @@
                 restaurante: rest,
                 latCliente: latCliente,
                 lonCliente: lonCliente,
-                volume: Math.random() > 0.8 ? 2 : 1, // 20% de chance do pedido ser "grande" (ocupar 2 espaços)
+                volume: Math.random() > 0.8 ? 2 : 1, 
                 marcadorCliente: L.marker([latCliente, lonCliente], {icon: iconeCliente}).addTo(mapa)
             });
             rodarDispatch();
