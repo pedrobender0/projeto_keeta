@@ -2,28 +2,45 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Keeta Dispatch - MVP Realista</title>
+    <title>Keeta Dispatch - Just-In-Time</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; height: 100vh; background-color: #f4f7f6; }
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; height: 100vh; background-color: #f0f2f5; }
         #mapa { width: 70%; height: 100%; }
-        #painel { width: 30%; padding: 25px; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto; }
-        h1 { font-size: 22px; color: #333; margin-bottom: 5px; }
+        #painel { width: 30%; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto; background: #fff; border-left: 1px solid #ddd;}
         
-        #relogio-container { background: #1a252f; color: #00ffcc; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-weight: bold; font-size: 32px; font-family: 'Courier New', monospace; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);}
-        .lbl-relogio { font-size: 11px; color: #888; display: block; font-family: 'Segoe UI', sans-serif; letter-spacing: 1px; margin-bottom: 5px;}
+        h1 { font-size: 20px; color: #1a252f; margin-bottom: 2px; }
+        .sub-header { color: #7f8c8d; font-size: 13px; margin-top: 0; margin-bottom: 15px; }
+        
+        #relogio-container { background: #1a252f; color: #00ffcc; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 26px; font-family: 'Courier New', monospace; }
+        .lbl-relogio { font-size: 10px; color: #bdc3c7; display: block; letter-spacing: 1px; margin-bottom: 2px;}
 
-        .kpi-container { background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        .kpi-titulo { font-size: 12px; color: #777; text-transform: uppercase; letter-spacing: 1px; }
-        .kpi-valor { font-size: 22px; font-weight: bold; color: #2c3e50; margin-top: 5px; }
+        #alerta-surge { display: none; background: #e74c3c; color: white; text-align: center; padding: 5px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 10px; animation: piscar 1.5s infinite; }
+        @keyframes piscar { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .kpi-card { background: #f8f9fa; padding: 10px; border-radius: 6px; border-left: 4px solid #3498db; }
+        .kpi-titulo { font-size: 9px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+        .kpi-valor { font-size: 16px; font-weight: bold; color: #2c3e50; margin-top: 5px; }
         
-        button { background: #27ae60; color: white; border: none; padding: 15px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; margin-top: auto; }
-        button:hover { background: #219653; }
+        .border-green { border-left-color: #27ae60; }
+        .border-purple { border-left-color: #9b59b6; }
+        .border-orange { border-left-color: #f39c12; }
+
+        .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+        button { color: white; border: none; padding: 12px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-simular { background: #2980b9; }
+        .btn-simular:hover { background: #2471a3; }
+        .btn-exportar { background: #217346; } 
+        .btn-exportar:hover { background: #1e6b3e; }
         
-        #log { margin-top: 15px; font-size: 12px; color: #444; background: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 5px; height: 250px; overflow-y: auto; line-height: 1.5; }
-        .log-time { font-weight: bold; color: #7f8c8d; }
-        .log-eta { color: #e67e22; font-weight: bold; background: #fff3e0; padding: 2px 4px; border-radius: 3px;}
+        #log { margin-top: 10px; margin-bottom: 15px; font-size: 11px; color: #444; background: #fdfdfd; border: 1px solid #e0e0e0; padding: 10px; border-radius: 4px; height: 160px; overflow-y: auto; line-height: 1.5; }
+        .log-time { font-weight: bold; color: #95a5a6; }
+        .log-batch { color: #8e44ad; font-weight: bold; background: #f4ecf8; padding: 1px 3px; border-radius: 2px;}
+        .log-surge { color: #e74c3c; font-weight: bold;}
         .log-sucesso { color: #27ae60; font-weight: bold;}
+        .log-movimento { color: #2980b9; font-weight: 500;}
+        .log-jit { color: #d35400; font-weight: bold; background: #fdf2e9; padding: 2px; } /* Just In Time log */
     </style>
 </head>
 <body>
@@ -31,49 +48,49 @@
     <div id="mapa"></div>
 
     <div id="painel">
-        <h1>Keeta Dispatch</h1>
-        <p style="color: #777; font-size: 14px; margin-top: 0; margin-bottom: 15px;">Operação Determinística - SP</p>
+        <h1>Keeta Data Science Lab</h1>
+        <p class="sub-header">Motor de Despacho Just-in-Time</p>
 
         <div id="relogio-container">
-            <span class="lbl-relogio">HORÁRIO DA OPERAÇÃO</span>
+            <span class="lbl-relogio">HORÁRIO DO SERVIDOR</span>
             <span id="relogio-display">12:00</span>
         </div>
+        
+        <div id="alerta-surge">🔥 ALTA DEMANDA: TARIFA DINÂMICA ATIVA (1.4x)</div>
 
-        <div class="kpi-container">
-            <div class="kpi-titulo">SLA Médio de Entrega Real</div>
-            <div class="kpi-valor" id="kpi-sla">-- min</div>
+        <div class="kpi-grid">
+            <div class="kpi-card border-orange">
+                <div class="kpi-titulo">SLA Médio de Entrega</div>
+                <div class="kpi-valor" id="kpi-sla">-- min</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-titulo">Corridas Finalizadas</div>
+                <div class="kpi-valor" id="kpi-entregas">0</div>
+            </div>
+            <div class="kpi-card border-purple">
+                <div class="kpi-titulo">Ganho Médio/Entregador</div>
+                <div class="kpi-valor" id="kpi-ganho-entregador" style="color: #8e44ad;">R$ 0,00</div>
+            </div>
+            <div class="kpi-card border-green">
+                <div class="kpi-titulo">Lucro Médio App/Entrega</div>
+                <div class="kpi-valor" id="kpi-lucro-app" style="color: #27ae60;">R$ 0,00</div>
+            </div>
         </div>
 
-        <div class="kpi-container" style="border-left-color: #e74c3c;">
-            <div class="kpi-titulo">Custo por Entrega (CPO)</div>
-            <div class="kpi-valor" id="kpi-cpo" style="color: #e74c3c;">R$ 0,00</div>
+        <div id="log">Motor preditivo Just-in-Time ativado...<br></div>
+
+        <div class="btn-group">
+            <button class="btn-simular" onclick="gerarNovoPedido()">+ Simular Novo Pedido</button>
+            <button class="btn-exportar" onclick="baixarCSV()">📊 Exportar Dados (CSV Excel)</button>
         </div>
-
-        <div class="kpi-container" style="border-left-color: #f39c12;">
-            <div class="kpi-titulo">Ocupação da Frota</div>
-            <div class="kpi-valor" id="kpi-ocupacao">0 / 4</div>
-        </div>
-
-        <div id="log">Monitor conectado ao Dispatcher...<br></div>
-
-        <button onclick="gerarNovoPedido()">Simular Novo Pedido</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // ==========================================
-        // 1. CONFIGURAÇÕES FÍSICAS DA SIMULAÇÃO
-        // ==========================================
-        const VELOCIDADE_MOTO_KMH = 30; // Velocidade base em SP
-        
-        // RELÓGIO: 1 segundo real = 1 minuto virtual
+        const VELOCIDADE_MOTO_KMH = 30; 
         let dataVirtual = new Date();
         dataVirtual.setHours(12, 0, 0, 0);
 
-        // ==========================================
-        // 2. SETUP DO MAPA E ATORES
-        // ==========================================
-        // Zoom afastado (13 em vez de 15) para ver viagens mais longas
         const mapa = L.map('mapa').setView([-23.585, -46.678], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapa);
 
@@ -83,43 +100,34 @@
         const iconeCliente = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/2555/2555572.png', iconSize: [20, 20] });
 
         const restaurantes = [
+            // Tempos de preparo realistas: Hambúrguer rápido, Pizza demora
             { id: 'R1', lat: -23.586, lon: -46.679, nome: "Hamburgueria", tempoPreparoMin: 12 },
-            { id: 'R2', lat: -23.582, lon: -46.682, nome: "Pizzaria", tempoPreparoMin: 18 }
+            { id: 'R2', lat: -23.582, lon: -46.682, nome: "Pizzaria", tempoPreparoMin: 22 }
         ];
-
         restaurantes.forEach(r => L.marker([r.lat, r.lon], {icon: iconeRest}).addTo(mapa).bindPopup(`${r.nome} (Preparo: ${r.tempoPreparoMin}m)`));
 
-        // Frota mais espalhada por São Paulo (Jardins, Pinheiros, Moema, Berrini)
         let frota = [
-            { id: 1, lat: -23.565, lon: -46.650, ocupado: false, marcador: L.marker([-23.565, -46.650], {icon: iconeMotoLivre}).addTo(mapa).bindPopup("Moto 1 - Jardins") },
-            { id: 2, lat: -23.600, lon: -46.690, ocupado: false, marcador: L.marker([-23.600, -46.690], {icon: iconeMotoLivre}).addTo(mapa).bindPopup("Moto 2 - Berrini") },
-            { id: 3, lat: -23.595, lon: -46.660, ocupado: false, marcador: L.marker([-23.595, -46.660], {icon: iconeMotoLivre}).addTo(mapa).bindPopup("Moto 3 - Moema") },
-            { id: 4, lat: -23.575, lon: -46.695, ocupado: false, marcador: L.marker([-23.575, -46.695], {icon: iconeMotoLivre}).addTo(mapa).bindPopup("Moto 4 - Pinheiros") }
+            { id: 1, lat: -23.565, lon: -46.650, ocupado: false, marcador: L.marker([-23.565, -46.650], {icon: iconeMotoLivre}).addTo(mapa) },
+            { id: 2, lat: -23.600, lon: -46.690, ocupado: false, marcador: L.marker([-23.600, -46.690], {icon: iconeMotoLivre}).addTo(mapa) },
+            { id: 3, lat: -23.595, lon: -46.660, ocupado: false, marcador: L.marker([-23.595, -46.660], {icon: iconeMotoLivre}).addTo(mapa) },
+            { id: 4, lat: -23.575, lon: -46.695, ocupado: false, marcador: L.marker([-23.575, -46.695], {icon: iconeMotoLivre}).addTo(mapa) }
         ];
 
         let filaDePedidos = [];
         let contadorPedidos = 1000;
-        let metricas = { custoTotal: 0, pedidosEntregues: 0, tempoTotalSLA: 0 };
+        let metricas = { pedidosEntregues: 0, repasseTotalEntregadores: 0, lucroTotalApp: 0, corridasDuplas: 0, tempoTotalSLA: 0 };
+        let historicoDeDados = [];
 
-        // ==========================================
-        // 3. MOTOR MATEMÁTICO (FÍSICA REAL)
-        // ==========================================
-        
         function calcularDistanciaKM(lat1, lon1, lat2, lon2) {
             const R = 6371; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
-        // Formatação limpa (Apenas Hora e Minuto)
-        function formatarHora(data) {
-            return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute:'2-digit' });
-        }
-
+        function formatarHora(data) { return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute:'2-digit' }); }
+        
         function registrarLog(mensagem) {
             const log = document.getElementById('log');
             log.innerHTML += `<span class="log-time">[${formatarHora(dataVirtual)}]</span> ${mensagem}<br>`;
@@ -127,28 +135,51 @@
         }
 
         // ==========================================
-        // 4. O DISPATCHER DINÂMICO
+        // O MOTOR DE DISPATCH
         // ==========================================
-        
         function rodarDispatch() {
             if (filaDePedidos.length === 0) return;
 
-            for (let i = filaDePedidos.length - 1; i >= 0; i--) {
-                let pedido = filaDePedidos[i];
+            let multiplicadorSurge = 1.0;
+            if (filaDePedidos.length >= 4) {
+                multiplicadorSurge = 1.4; 
+                document.getElementById('alerta-surge').style.display = 'block';
+            } else {
+                document.getElementById('alerta-surge').style.display = 'none';
+            }
+
+            let lotes = [];
+            let pendentes = [...filaDePedidos];
+            
+            while(pendentes.length > 0) {
+                let pedidoBase = pendentes.shift();
+                let loteAtual = [pedidoBase];
+
+                for(let i = 0; i < pendentes.length; i++) {
+                    let candidato = pendentes[i];
+                    if (candidato.restaurante.id === pedidoBase.restaurante.id) {
+                        let distEntreClientes = calcularDistanciaKM(pedidoBase.latCliente, pedidoBase.lonCliente, candidato.latCliente, candidato.lonCliente);
+                        if (distEntreClientes <= 2.5) {
+                            loteAtual.push(candidato);
+                            pendentes.splice(i, 1);
+                            break; 
+                        }
+                    }
+                }
+                lotes.push(loteAtual);
+            }
+
+            filaDePedidos = []; 
+
+            for (let lote of lotes) {
                 let melhorMoto = null;
                 let menorTempoChegadaMin = Infinity;
+                let restauranteDoLote = lote[0].restaurante;
 
                 for (let moto of frota) {
                     if (!moto.ocupado) {
-                        let distKM = calcularDistanciaKM(moto.lat, moto.lon, pedido.restaurante.lat, pedido.restaurante.lon);
-                        
-                        // Fator de Trânsito Aleatório para o trajeto até o restaurante (Varia de 20 a 35 km/h)
-                        let velocidadeTransitoLocal = VELOCIDADE_MOTO_KMH * (0.6 + Math.random() * 0.6); 
-                        let tempoMinutos = distKM / (velocidadeTransitoLocal / 60);
-                        
-                        // Adiciona 1 a 3 minutos para o entregador achar o restaurante e estacionar
-                        tempoMinutos += 1 + Math.random() * 2; 
-
+                        let distKM = calcularDistanciaKM(moto.lat, moto.lon, restauranteDoLote.lat, restauranteDoLote.lon);
+                        let tempoMinutos = distKM / ((VELOCIDADE_MOTO_KMH * 0.8) / 60); 
                         if (tempoMinutos < menorTempoChegadaMin) {
                             menorTempoChegadaMin = tempoMinutos;
                             melhorMoto = moto;
@@ -157,114 +188,198 @@
                 }
 
                 if (melhorMoto) {
-                    alocarPedido(melhorMoto, pedido, menorTempoChegadaMin);
-                    filaDePedidos.splice(i, 1);
+                    alocarLote(melhorMoto, lote, menorTempoChegadaMin, multiplicadorSurge);
+                } else {
+                    lote.forEach(p => filaDePedidos.push(p));
                 }
             }
-            atualizarDashboard();
         }
 
-        function alocarPedido(moto, pedido, tempoChegarRestauranteMin) {
-            moto.ocupado = true;
-            moto.marcador.setIcon(iconeMotoOcupada);
+        // ==========================================
+        // MÁQUINA DE ESTADOS (DESPACHO POSTERGADO / JUST-IN-TIME)
+        // ==========================================
+        function alocarLote(moto, lote, tempoViagemAteRestauranteMin, surge) {
+            moto.ocupado = true; // Reserva a moto no sistema
+            let restaurante = lote[0].restaurante;
+            let isBatch = lote.length > 1;
 
-            let distRestClienteKM = calcularDistanciaKM(pedido.restaurante.lat, pedido.restaurante.lon, pedido.latCliente, pedido.lonCliente);
-            
-            // Fator de Trânsito para a viagem principal
-            let velocidadeTransitoViagem = VELOCIDADE_MOTO_KMH * (0.6 + Math.random() * 0.6);
-            let tempoViagemPuraMin = distRestClienteKM / (velocidadeTransitoViagem / 60);
-            
-            // Variabilidade Real: Demora na portaria (entre 2 e 5 minutos)
-            let tempoPortariaMin = 2 + Math.floor(Math.random() * 4);
-            let tempoViagemTotalMin = tempoViagemPuraMin + tempoPortariaMin;
-            
-            let tempoEsperaNoRestauranteMin = Math.max(0, pedido.restaurante.tempoPreparoMin - tempoChegarRestauranteMin);
-            
-            let tempoTotalOperacaoMin = tempoChegarRestauranteMin + tempoEsperaNoRestauranteMin + tempoViagemTotalMin;
-            
-            let dataETA = new Date(dataVirtual.getTime() + tempoTotalOperacaoMin * 60000);
-            
-            registrarLog(`🔥 Moto ${moto.id} no Pedido #${pedido.id} (Dist: ${distRestClienteKM.toFixed(1)}km). <br>&nbsp;&nbsp;&nbsp;↳ <span class="log-eta">ETA: ${formatarHora(dataETA)} (${Math.round(tempoTotalOperacaoMin)} min)</span>`);
-            
-            metricas.tempoTotalSLA += tempoTotalOperacaoMin;
+            // A MÁGICA ACONTECE AQUI:
+            // Comida demora 20 min. Moto demora 5 min pra chegar.
+            // Ocioso = 15 min. Vamos postergar o aviso em 13 min (deixa 2 min de margem).
+            let diferencaTempo = restaurante.tempoPreparoMin - tempoViagemAteRestauranteMin;
+            let tempoPostergadoMin = 0;
+            let tempoEsperaNoRestauranteMin = 2; // Margem de segurança pro motoboy respirar
 
-            // MÁQUINA DE ESTADOS DETERMINÍSTICA
+            if (diferencaTempo > 3) {
+                tempoPostergadoMin = diferencaTempo - 2; 
+            } else if (diferencaTempo < 0) {
+                // Moto está longe demais, vai chegar depois da comida pronta
+                tempoEsperaNoRestauranteMin = 0;
+            }
+
+            let tempoSLAEstimado = tempoPostergadoMin + tempoViagemAteRestauranteMin + tempoEsperaNoRestauranteMin;
+
+            if (tempoPostergadoMin > 0) {
+                registrarLog(`<span class="log-jit">🧠 JUST-IN-TIME: Moto ${moto.id} reservada. Despacho postergado em ${Math.round(tempoPostergadoMin)} min para sincronizar com a cozinha.</span>`);
+            } else {
+                moto.marcador.setIcon(iconeMotoOcupada);
+                registrarLog(`🔥 Moto ${moto.id} acionada imediatamente para o ${restaurante.nome}.`);
+            }
+
+            // FASE 0: DESPACHO POSTERGADO (A moto fica parada no mapa)
             setTimeout(() => {
-                moto.marcador.setLatLng([pedido.restaurante.lat, pedido.restaurante.lon]);
-                moto.lat = pedido.restaurante.lat;
-                moto.lon = pedido.restaurante.lon;
-                
-                if(tempoEsperaNoRestauranteMin > 1) {
-                    registrarLog(`📍 Moto ${moto.id} no restaurante. Aguardando preparo (${Math.round(tempoEsperaNoRestauranteMin)} min)...`);
+                if (tempoPostergadoMin > 0) {
+                    moto.marcador.setIcon(iconeMotoOcupada); // Agora sim apita no app do entregador
+                    registrarLog(`<span class="log-movimento">📱 Ping! Moto ${moto.id} recebeu o chamado. A caminho do ${restaurante.nome}.</span>`);
                 }
-                
+
+                // FASE 1: VIAGEM ATÉ O RESTAURANTE
                 setTimeout(() => {
-                    registrarLog(`🚀 Moto ${moto.id} a caminho do cliente!`);
-                    moto.marcador.setLatLng([pedido.latCliente, pedido.lonCliente]);
-                    moto.lat = pedido.latCliente;
-                    moto.lon = pedido.lonCliente;
+                    moto.marcador.setLatLng([restaurante.lat, restaurante.lon]);
+                    moto.lat = restaurante.lat;
+                    moto.lon = restaurante.lon;
                     
+                    registrarLog(`<span class="log-movimento">📍 Moto ${moto.id} chegou. Retirando pedido recém-saído do forno!</span>`);
+
+                    // FASE 2: SAIU DO RESTAURANTE COM O PEDIDO
                     setTimeout(() => {
-                        finalizarEntrega(moto, pedido, distRestClienteKM);
-                    }, tempoViagemTotalMin * 1000); 
+                        registrarLog(`<span class="log-movimento">🚀 Moto ${moto.id} saiu para entrega!</span>`);
 
-                }, tempoEsperaNoRestauranteMin * 1000); 
+                        let c1 = lote[0];
+                        let distC1 = calcularDistanciaKM(restaurante.lat, restaurante.lon, c1.latCliente, c1.lonCliente);
+                        let tempoViagemC1 = distC1 / ((VELOCIDADE_MOTO_KMH * 0.8) / 60) + 3; 
+                        tempoSLAEstimado += tempoViagemC1;
+                        
+                        // FASE 3: CHEGOU NO CLIENTE 1
+                        setTimeout(() => {
+                            moto.marcador.setLatLng([c1.latCliente, c1.lonCliente]);
+                            moto.lat = c1.latCliente;
+                            moto.lon = c1.lonCliente;
+                            
+                            mapa.removeLayer(c1.marcadorCliente);
+                            metricas.tempoTotalSLA += tempoSLAEstimado;
+                            processarFinanceiro(moto, c1, distC1, restaurante, surge, !isBatch, tempoPostergadoMin, tempoEsperaNoRestauranteMin);
 
-            }, tempoChegarRestauranteMin * 1000); 
+                            // FASE 4: LOTE DUPLO
+                            if (isBatch) {
+                                let c2 = lote[1];
+                                let distC2 = calcularDistanciaKM(c1.latCliente, c1.lonCliente, c2.latCliente, c2.lonCliente);
+                                let tempoViagemC2 = distC2 / ((VELOCIDADE_MOTO_KMH * 0.8) / 60) + 3;
+                                tempoSLAEstimado += tempoViagemC2;
+                                
+                                setTimeout(() => {
+                                    moto.marcador.setLatLng([c2.latCliente, c2.lonCliente]);
+                                    moto.lat = c2.latCliente;
+                                    moto.lon = c2.lonCliente;
+                                    
+                                    mapa.removeLayer(c2.marcadorCliente);
+                                    metricas.tempoTotalSLA += tempoSLAEstimado;
+                                    processarFinanceiro(moto, c2, distC1 + distC2, restaurante, surge, true, tempoPostergadoMin, tempoEsperaNoRestauranteMin); 
+                                    
+                                }, tempoViagemC2 * 1000); 
+                            }
+
+                        }, tempoViagemC1 * 1000); 
+
+                    }, tempoEsperaNoRestauranteMin * 1000); 
+
+                }, tempoViagemAteRestauranteMin * 1000);
+
+            }, tempoPostergadoMin * 1000); // O Timer do Despacho Postergado
         }
 
-        function finalizarEntrega(moto, pedido, distanciaPercorridaKM) {
-            moto.ocupado = false;
-            moto.marcador.setIcon(iconeMotoLivre);
-            mapa.removeLayer(pedido.marcadorCliente);
+        // ==========================================
+        // CÁLCULOS FINANCEIROS E EXPORTAÇÃO
+        // ==========================================
+        function processarFinanceiro(moto, pedido, distPercorridaKM, restauranteBase, surgeMultiplier, isFimDoTurno, minPostergados, minEsperaLoja) {
+            
+            let taxaCobradaDoCliente = 5.00 + (distPercorridaKM * 1.80); 
+            let taxaFixaDoRestaurante = 3.50;
+            let receitaApp = taxaCobradaDoCliente + taxaFixaDoRestaurante;
 
-            let custoDessaEntrega = 5.00 + (distanciaPercorridaKM * 1.50); 
-            metricas.custoTotal += custoDessaEntrega;
+            let ganhoEntregador = 5.50 + (distPercorridaKM * 1.50); 
+            
+            let taxaRetorno = 0;
+            let distDeVoltaProPolo = calcularDistanciaKM(pedido.latCliente, pedido.lonCliente, restauranteBase.lat, restauranteBase.lon);
+            if (distDeVoltaProPolo > 3.0) {
+                taxaRetorno = 4.00; 
+                ganhoEntregador += taxaRetorno;
+            }
+
+            ganhoEntregador = ganhoEntregador * surgeMultiplier;
+            let lucroApp = receitaApp - ganhoEntregador;
+
+            metricas.repasseTotalEntregadores += ganhoEntregador;
+            metricas.lucroTotalApp += lucroApp;
             metricas.pedidosEntregues++;
 
-            registrarLog(`<span class="log-sucesso">✅ Pedido #${pedido.id} Entregue na portaria! Moto ${moto.id} livre.</span>`);
+            if (isFimDoTurno) {
+                moto.ocupado = false;
+                moto.marcador.setIcon(iconeMotoLivre);
+            }
+
+            historicoDeDados.push({
+                id_pedido: pedido.id,
+                id_entregador: moto.id,
+                distancia_km: distPercorridaKM.toFixed(2),
+                tempo_despacho_postergado: Math.round(minPostergados),
+                tempo_ocioso_loja: Math.round(minEsperaLoja),
+                receita_app_brl: receitaApp.toFixed(2),
+                custo_entregador_brl: ganhoEntregador.toFixed(2),
+                lucro_liquido_brl: lucroApp.toFixed(2)
+            });
+
+            registrarLog(`<span class="log-sucesso">✅ Pedido #${pedido.id} Entregue.</span>`);
             atualizarDashboard();
         }
 
-        // ==========================================
-        // 5. LOOP DO RELÓGIO E EVENTOS
-        // ==========================================
-        
+        function baixarCSV() {
+            if (historicoDeDados.length === 0) return alert("Simule antes de exportar.");
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "ID Pedido;ID Entregador;Distancia (KM);Minutos Despacho Postergado;Minutos Espera na Loja;Receita App (R$);Ganho Entregador (R$);Lucro Liquido (R$)\n";
+
+            historicoDeDados.forEach(row => {
+                let rowArray = [ row.id_pedido, row.id_entregador, row.distancia_km.replace('.', ','), row.tempo_despacho_postergado, row.tempo_ocioso_loja, row.receita_app_brl.replace('.', ','), row.custo_entregador_brl.replace('.', ','), row.lucro_liquido_brl.replace('.', ',') ];
+                csvContent += rowArray.join(";") + "\n";
+            });
+
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "keeta_dados_jit.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         function gerarNovoPedido() {
             contadorPedidos++;
-            const rest = restaurantes[Math.floor(Math.random() * restaurantes.length)];
-            
-            // Área muito maior para gerar clientes (Pode ser do outro lado da cidade)
+            // Garante que pelo menos um pedido vá para a Pizzaria (que demora 22 min) para você ver o Just-in-Time funcionar
+            const rest = restaurantes[contadorPedidos % 2 === 0 ? 1 : Math.floor(Math.random() * restaurantes.length)];
             const latCliente = rest.lat + (Math.random() - 0.5) * 0.08; 
             const lonCliente = rest.lon + (Math.random() - 0.5) * 0.08;
 
-            const novoPedido = {
+            filaDePedidos.push({
                 id: contadorPedidos,
                 restaurante: rest,
                 latCliente: latCliente,
                 lonCliente: lonCliente,
                 marcadorCliente: L.marker([latCliente, lonCliente], {icon: iconeCliente}).addTo(mapa)
-            };
-
-            filaDePedidos.push(novoPedido);
-            registrarLog(`🍔 Pedido #${contadorPedidos} entrou no servidor (${rest.nome}).`);
-            atualizarDashboard();
+            });
+            registrarLog(`🍔 Pedido #${contadorPedidos} entrou na fila. Aguardando...`);
+            rodarDispatch();
         }
 
         function atualizarDashboard() {
-            let ocupadas = frota.filter(m => m.ocupado).length;
-            document.getElementById('kpi-ocupacao').innerText = `${ocupadas} / ${frota.length}`;
-            
             if (metricas.pedidosEntregues > 0) {
-                let cpo = metricas.custoTotal / metricas.pedidosEntregues;
-                document.getElementById('kpi-cpo').innerText = `R$ ${cpo.toFixed(2).replace('.', ',')}`;
+                document.getElementById('kpi-entregas').innerText = metricas.pedidosEntregues;
+                document.getElementById('kpi-ganho-entregador').innerText = `R$ ${(metricas.repasseTotalEntregadores / metricas.pedidosEntregues).toFixed(2).replace('.', ',')}`;
+                document.getElementById('kpi-lucro-app').innerText = `R$ ${(metricas.lucroTotalApp / metricas.pedidosEntregues).toFixed(2).replace('.', ',')}`;
                 
                 let sla = Math.round(metricas.tempoTotalSLA / metricas.pedidosEntregues);
                 document.getElementById('kpi-sla').innerText = `${sla} min`;
             }
         }
 
-        // Relógio Central: 1 segundo real = 1 minuto de simulação
         setInterval(() => {
             dataVirtual.setMinutes(dataVirtual.getMinutes() + 1);
             document.getElementById('relogio-display').innerText = formatarHora(dataVirtual);
